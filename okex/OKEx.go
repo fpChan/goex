@@ -54,6 +54,7 @@ func (ok *OKEx) UUID() string {
 func (ok *OKEx) DoRequest(httpMethod, uri, reqBody string, response interface{}) error {
 	url := ok.config.Endpoint + uri
 	sign, timestamp := ok.doParamSign(httpMethod, uri, reqBody)
+	//fmt.Printf("url %s\n", url)
 	//logger.Log.Debug("timestamp=", timestamp, ", sign=", sign)
 	resp, err := NewHttpRequest(ok.config.HttpClient, httpMethod, url, reqBody, map[string]string{
 		CONTENT_TYPE: APPLICATION_JSON_UTF8,

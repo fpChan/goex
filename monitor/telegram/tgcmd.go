@@ -34,7 +34,7 @@ func main() {
 		ApiSecretKey:  "",
 		ApiPassphrase: "",
 	})
-	var symbols = []goex.CurrencyPair{goex.BTC_USDT, goex.ETH_USD}
+	var symbols = []goex.CurrencyPair{goex.SHIB_USDT, goex.SUSHI_USDT, goex.UNI_USDT, goex.LINCH_USDT, goex.KSM_USDT, goex.MATIC_USDT, goex.THETA_USDT, goex.BTC_USDT, goex.ETH_USD}
 	monitorTool = monitor.NewTelegramMonitor(okEx.OKExFuture, tgURL, tgChatID, proxyScheme, proxyHost, symbols)
 	if err := monitorTool.Start(); err != nil {
 		return

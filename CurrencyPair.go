@@ -47,25 +47,31 @@ var (
 	SC      = Currency{"SC", ""}
 	ANS     = Currency{"ANS", ""}
 	ZEC     = Currency{"ZEC", ""}
-	DCR     = Currency{"DCR", ""}
 	XRP     = Currency{"XRP", ""}
 	BTG     = Currency{"BTG", ""}
 	BCD     = Currency{"BCD", ""}
 	NEO     = Currency{"NEO", ""}
-	HSR     = Currency{"HSR", ""}
 	BSV     = Currency{"BSV", ""}
 	OKB     = Currency{"OKB", "OKB is a global utility token issued by OK Blockchain Foundation"}
 	HT      = Currency{"HT", "HuoBi Token"}
 	BNB     = Currency{"BNB", "BNB, or Binance Coin, is a cryptocurrency created by Binance."}
 	TRX     = Currency{"TRX", ""}
-	GBP     = Currency{"GBP", ""}
-	XLM     = Currency{"XLM", ""}
-	DOT     = Currency{"DOT", ""}
-	DASH    = Currency{"DASH", ""}
-	CRV     = Currency{"CRV", ""}
-	ALGO    = Currency{"ALGO", ""}
+
+	XLM  = Currency{"XLM", ""}
+	DOT  = Currency{"DOT", ""}
+	DASH = Currency{"DASH", ""}
+	CRV  = Currency{"CRV", ""}
+	ALGO = Currency{"ALGO", ""}
 
 	//currency pair
+
+	UNI_USDT   = CurrencyPair{CurrencyA: Currency{"UNI", ""}, CurrencyB: USDT, AmountTickSize: 2, PriceTickSize: 1}
+	LINCH_USDT = CurrencyPair{CurrencyA: Currency{"1INCH", ""}, CurrencyB: USDT, AmountTickSize: 2, PriceTickSize: 1}
+	MATIC_USDT = CurrencyPair{CurrencyA: Currency{"MATIC", ""}, CurrencyB: USDT, AmountTickSize: 2, PriceTickSize: 1}
+	THETA_USDT = CurrencyPair{CurrencyA: Currency{"THETA", ""}, CurrencyB: USDT, AmountTickSize: 2, PriceTickSize: 1}
+	SUSHI_USDT = CurrencyPair{CurrencyA: Currency{"SUSHI", ""}, CurrencyB: USDT, AmountTickSize: 2, PriceTickSize: 1}
+	SHIB_USDT  = CurrencyPair{CurrencyA: Currency{"SHIB", ""}, CurrencyB: USDT, AmountTickSize: 2, PriceTickSize: 1}
+	KSM_USDT   = CurrencyPair{CurrencyA: Currency{"KSM", ""}, CurrencyB: USDT, AmountTickSize: 2, PriceTickSize: 1}
 
 	BTC_USD  = CurrencyPair{CurrencyA: BTC, CurrencyB: USD, AmountTickSize: 2, PriceTickSize: 1}
 	LTC_USD  = CurrencyPair{CurrencyA: LTC, CurrencyB: USD, AmountTickSize: 2, PriceTickSize: 2}
@@ -91,7 +97,6 @@ var (
 	NEO_USDT  = CurrencyPair{CurrencyA: NEO, CurrencyB: USDT, AmountTickSize: 2, PriceTickSize: 2}
 	EOS_USDT  = CurrencyPair{CurrencyA: EOS, CurrencyB: USDT, AmountTickSize: 2, PriceTickSize: 2}
 	XRP_USDT  = CurrencyPair{CurrencyA: XRP, CurrencyB: USDT, AmountTickSize: 2, PriceTickSize: 2}
-	HSR_USDT  = CurrencyPair{CurrencyA: HSR, CurrencyB: USDT, AmountTickSize: 2, PriceTickSize: 2}
 	BSV_USDT  = CurrencyPair{CurrencyA: BSV, CurrencyB: USDT, AmountTickSize: 2, PriceTickSize: 2}
 	OKB_USDT  = CurrencyPair{CurrencyA: OKB, CurrencyB: USDT, AmountTickSize: 2, PriceTickSize: 2}
 	HT_USDT   = CurrencyPair{CurrencyA: HT, CurrencyB: USDT, AmountTickSize: 2, PriceTickSize: 4}

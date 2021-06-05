@@ -63,6 +63,9 @@ func (tgMonitor TelegramMonitor) Start() error {
 				}
 				var changePercent = (candles[0].Low - candles[0].High) / candles[0].High * 100
 				fmt.Printf("changePercent %f \t", changePercent)
+				if changePercent > -1 && changePercent < 1 {
+					continue
+				}
 				//msg = fmt.Sprintf("%s change percent: %f\t high:%f\t low:%f\t price: %f\n%s", symbol , ticker.Last,  msg)
 				msg = fmt.Sprintf("%s change percent: %0.2f %%\t high:%f\t low:%f\t price: %f\n time %s\n%s", symbol, changePercent, candles[0].High, candles[0].Low, candles[0].Close, time.Unix(candles[0].Timestamp, 0), msg)
 
