@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -159,9 +160,10 @@ type tickerResponse struct {
 
 func (ok *OKExFuture) GetFutureTicker(currencyPair CurrencyPair, contractType string) (*Ticker, error) {
 	var (
-		urlPath  = fmt.Sprintf("/api/futures/v3/instruments/%s/ticker", ok.GetFutureContractId(currencyPair, contractType))
+		urlPath  = fmt.Sprintf("/api/swap/v3/instruments/%s-%s-%s/ticker", currencyPair.CurrencyA.Symbol, currencyPair.CurrencyB.Symbol, contractType)
 		response tickerResponse
 	)
+	fmt.Printf("url: %s \n", urlPath)
 	err := ok.DoRequest("GET", urlPath, "", &response)
 	if err != nil {
 		return nil, err
@@ -178,6 +180,34 @@ func (ok *OKExFuture) GetFutureTicker(currencyPair CurrencyPair, contractType st
 		Last: response.Last,
 		Vol:  response.Volume24h,
 		Date: uint64(date.UnixNano() / int64(time.Millisecond))}, nil
+}
+
+func (ok *OKExFuture) GetFutureTrendTicker(currencyPair CurrencyPair, contractType string) (*Trend, error) {
+	var (
+		urlPath  = fmt.Sprintf("/v2/perpetual/pc/public/contracts/%s-%s-%s/ticker", currencyPair.CurrencyA.Symbol, currencyPair.CurrencyB.Symbol, strings.ToUpper(contractType))
+		response OkTrendTicker
+	)
+	fmt.Printf("url: %s \n", urlPath)
+	err := ok.DoRequest("GET", urlPath, "", &response)
+	if err != nil {
+		return nil, err
+	}
+	if response.Code != 0 {
+		logger.Error(fmt.Sprintf("failed to get ticker url %s error_msg is %s . msg is %s ", urlPath, response.Error_message, response.Msg))
+	}
+
+	return &Trend{
+		ChangePercent: response.Data.ChangePercent,
+		Close:         response.Data.Close,
+		Contract:      response.Data.Contract,
+		ContractId:    response.Data.ContractId,
+		High:          response.Data.High,
+		//HighLimit:     response.HighLimit,
+		//HoldAmount:    response.HoldAmount,
+		Low: response.Data.Low,
+		//LowLimit:      response.LowLimit,
+		Open: response.Data.Open,
+	}, nil
 }
 
 func (ok *OKExFuture) GetFutureAllTicker() (*[]FutureTicker, error) {
@@ -659,15 +689,14 @@ func (ok *OKExFuture) GetDeliveryTime() (int, int, int, int) {
 }
 
 func (ok *OKExFuture) GetKlineRecords(contractType string, currency CurrencyPair, period KlinePeriod, size int, opt ...OptionalParameter) ([]FutureKline, error) {
-	urlPath := "/api/futures/v3/instruments/%s/candles?granularity=%d"
-	contractId := ok.GetFutureContractId(currency, contractType)
+	urlPath := "/api/swap/v3/instruments/%s-%s-%s/candles?granularity=%d"
 	granularity := adaptKLinePeriod(KlinePeriod(period))
 	if granularity == -1 {
 		return nil, errors.New("kline period parameter is error")
 	}
 
 	var response [][]interface{}
-	err := ok.DoRequest("GET", fmt.Sprintf(urlPath, contractId, granularity), "", &response)
+	err := ok.DoRequest("GET", fmt.Sprintf(urlPath, currency.CurrencyA.Symbol, currency.CurrencyB.Symbol, strings.ToUpper(contractType), granularity), "", &response)
 	if err != nil {
 		return nil, err
 	}

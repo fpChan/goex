@@ -123,3 +123,8 @@ type FutureRestAPI interface {
 	 */
 	GetTrades(contractType string, currencyPair CurrencyPair, since int64) ([]Trade, error)
 }
+
+type ExpandFutureRestAPI interface {
+	FutureRestAPI
+	GetFutureTrendTicker(currencyPair CurrencyPair, contractType string) (*Trend, error)
+}

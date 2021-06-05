@@ -296,3 +296,25 @@ func (optional OptionalParameter) GetTime(name string) *time.Time {
 	}
 	return nil
 }
+
+type OkTrendTicker struct {
+	Data Trend `json:"data"`
+	Code int32 `json:"code"`
+	//detailMsg string `json:"changePercent"`
+	Error_code    string `json:"error_code"`
+	Error_message string `json:"error_message"`
+	Msg           string `json:"msg"`
+}
+
+type Trend struct {
+	ChangePercent string `json:"changePercent"`
+	Close         string `json:"close"`
+	Contract      string `json:"contract"`
+	ContractId    string `json:"contractId"`
+	High          string `json:"high"`
+	//HighLimit     float64 `json:"highLimit"`
+	//HoldAmount    float64 `json:"holdAmount"`
+	Low string `json:"low"`
+	//LowLimit      float64 `json:"lowLimit"`
+	Open string `json:"open"`
+}

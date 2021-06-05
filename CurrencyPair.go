@@ -66,11 +66,6 @@ var (
 	ALGO    = Currency{"ALGO", ""}
 
 	//currency pair
-	BTC_KRW = CurrencyPair{CurrencyA: BTC, CurrencyB: KRW, AmountTickSize: 2, PriceTickSize: 1}
-	ETH_KRW = CurrencyPair{CurrencyA: ETH, CurrencyB: KRW, AmountTickSize: 2, PriceTickSize: 2}
-	ETC_KRW = CurrencyPair{CurrencyA: ETC, CurrencyB: KRW, AmountTickSize: 2, PriceTickSize: 2}
-	LTC_KRW = CurrencyPair{CurrencyA: LTC, CurrencyB: KRW, AmountTickSize: 2, PriceTickSize: 2}
-	BCH_KRW = CurrencyPair{CurrencyA: BCH, CurrencyB: KRW, AmountTickSize: 2, PriceTickSize: 2}
 
 	BTC_USD  = CurrencyPair{CurrencyA: BTC, CurrencyB: USD, AmountTickSize: 2, PriceTickSize: 1}
 	LTC_USD  = CurrencyPair{CurrencyA: LTC, CurrencyB: USD, AmountTickSize: 2, PriceTickSize: 2}
@@ -108,39 +103,34 @@ var (
 	CRV_USDT  = CurrencyPair{CurrencyA: CRV, CurrencyB: USDT, AmountTickSize: 3, PriceTickSize: 3}
 	ALGO_USDT = CurrencyPair{CurrencyA: ALGO, CurrencyB: USDT, AmountTickSize: 3, PriceTickSize: 4}
 
-	XRP_EUR = CurrencyPair{CurrencyA: XRP, CurrencyB: EUR, AmountTickSize: 2, PriceTickSize: 4}
+	//XRP_EUR = CurrencyPair{CurrencyA: XRP, CurrencyB: EUR, AmountTickSize: 2, PriceTickSize: 4}
+	//
 
-	BTC_JPY = CurrencyPair{CurrencyA: BTC, CurrencyB: JPY, AmountTickSize: 2, PriceTickSize: 0}
-	LTC_JPY = CurrencyPair{CurrencyA: LTC, CurrencyB: JPY, AmountTickSize: 2, PriceTickSize: 0}
-	ETH_JPY = CurrencyPair{CurrencyA: ETH, CurrencyB: JPY, AmountTickSize: 2, PriceTickSize: 0}
-	ETC_JPY = CurrencyPair{CurrencyA: ETC, CurrencyB: JPY, AmountTickSize: 2, PriceTickSize: 0}
-	BCH_JPY = CurrencyPair{CurrencyA: BCH, CurrencyB: JPY, AmountTickSize: 2, PriceTickSize: 0}
+	//LTC_BTC = CurrencyPair{CurrencyA: LTC, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
+	//ETH_BTC = CurrencyPair{CurrencyA: ETH, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
+	//ETC_BTC = CurrencyPair{CurrencyA: ETC, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
+	//BCC_BTC = CurrencyPair{CurrencyA: BCC, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
+	//BCH_BTC = CurrencyPair{CurrencyA: BCH, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
+	//DCR_BTC = CurrencyPair{CurrencyA: DCR, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
+	//XRP_BTC = CurrencyPair{CurrencyA: XRP, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 6}
+	//BTG_BTC = CurrencyPair{CurrencyA: BTG, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
+	//BCD_BTC = CurrencyPair{CurrencyA: BCD, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
+	//NEO_BTC = CurrencyPair{CurrencyA: NEO, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
+	//EOS_BTC = CurrencyPair{CurrencyA: EOS, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 5}
+	//HSR_BTC = CurrencyPair{CurrencyA: HSR, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
+	//BSV_BTC = CurrencyPair{CurrencyA: BSV, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
+	//OKB_BTC = CurrencyPair{CurrencyA: OKB, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 6}
+	//HT_BTC  = CurrencyPair{CurrencyA: HT, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 7}
+	//BNB_BTC = CurrencyPair{CurrencyA: BNB, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 6}
+	//TRX_BTC = CurrencyPair{CurrencyA: TRX, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 7}
+	//DOT_BTC = CurrencyPair{CurrencyA: DOT, CurrencyB: BTC, AmountTickSize: 3, PriceTickSize: 6}
 
-	LTC_BTC = CurrencyPair{CurrencyA: LTC, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
-	ETH_BTC = CurrencyPair{CurrencyA: ETH, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
-	ETC_BTC = CurrencyPair{CurrencyA: ETC, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
-	BCC_BTC = CurrencyPair{CurrencyA: BCC, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
-	BCH_BTC = CurrencyPair{CurrencyA: BCH, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
-	DCR_BTC = CurrencyPair{CurrencyA: DCR, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
-	XRP_BTC = CurrencyPair{CurrencyA: XRP, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 6}
-	BTG_BTC = CurrencyPair{CurrencyA: BTG, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
-	BCD_BTC = CurrencyPair{CurrencyA: BCD, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
-	NEO_BTC = CurrencyPair{CurrencyA: NEO, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
-	EOS_BTC = CurrencyPair{CurrencyA: EOS, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 5}
-	HSR_BTC = CurrencyPair{CurrencyA: HSR, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
-	BSV_BTC = CurrencyPair{CurrencyA: BSV, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 4}
-	OKB_BTC = CurrencyPair{CurrencyA: OKB, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 6}
-	HT_BTC  = CurrencyPair{CurrencyA: HT, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 7}
-	BNB_BTC = CurrencyPair{CurrencyA: BNB, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 6}
-	TRX_BTC = CurrencyPair{CurrencyA: TRX, CurrencyB: BTC, AmountTickSize: 2, PriceTickSize: 7}
-	DOT_BTC = CurrencyPair{CurrencyA: DOT, CurrencyB: BTC, AmountTickSize: 3, PriceTickSize: 6}
-
-	ETC_ETH = CurrencyPair{CurrencyA: ETC, CurrencyB: ETH, AmountTickSize: 2, PriceTickSize: 4}
-	EOS_ETH = CurrencyPair{CurrencyA: EOS, CurrencyB: ETH, AmountTickSize: 2, PriceTickSize: 4}
-	ZEC_ETH = CurrencyPair{CurrencyA: ZEC, CurrencyB: ETH, AmountTickSize: 2, PriceTickSize: 4}
-	NEO_ETH = CurrencyPair{CurrencyA: NEO, CurrencyB: ETH, AmountTickSize: 2, PriceTickSize: 4}
-	HSR_ETH = CurrencyPair{CurrencyA: HSR, CurrencyB: ETH, AmountTickSize: 2, PriceTickSize: 4}
-	LTC_ETH = CurrencyPair{CurrencyA: LTC, CurrencyB: ETH, AmountTickSize: 2, PriceTickSize: 4}
+	//ETC_ETH = CurrencyPair{CurrencyA: ETC, CurrencyB: ETH, AmountTickSize: 2, PriceTickSize: 4}
+	//EOS_ETH = CurrencyPair{CurrencyA: EOS, CurrencyB: ETH, AmountTickSize: 2, PriceTickSize: 4}
+	//ZEC_ETH = CurrencyPair{CurrencyA: ZEC, CurrencyB: ETH, AmountTickSize: 2, PriceTickSize: 4}
+	//NEO_ETH = CurrencyPair{CurrencyA: NEO, CurrencyB: ETH, AmountTickSize: 2, PriceTickSize: 4}
+	//HSR_ETH = CurrencyPair{CurrencyA: HSR, CurrencyB: ETH, AmountTickSize: 2, PriceTickSize: 4}
+	//LTC_ETH = CurrencyPair{CurrencyA: LTC, CurrencyB: ETH, AmountTickSize: 2, PriceTickSize: 4}
 
 	UNKNOWN_PAIR = CurrencyPair{CurrencyA: UNKNOWN, CurrencyB: UNKNOWN}
 )
