@@ -1,7 +1,7 @@
 package okex
 
 import (
-	"github.com/nntaoli-project/goex"
+	"github.com/fpChan/goex"
 	"net/http"
 	"net/url"
 	"testing"

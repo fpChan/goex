@@ -2,9 +2,9 @@ package monitor
 
 import (
 	"encoding/json"
-	"github.com/nntaoli-project/goex"
-	"github.com/nntaoli-project/goex/monitor/wechat"
-	"github.com/nntaoli-project/goex/okex"
+	"github.com/fpChan/goex"
+	"github.com/fpChan/goex/monitor/wechat"
+	"github.com/fpChan/goex/okex"
 	"log"
 	"net/http"
 	"net/url"

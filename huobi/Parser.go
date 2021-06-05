@@ -2,8 +2,8 @@ package huobi
 
 import (
 	"fmt"
-	"github.com/nntaoli-project/goex"
-	"github.com/nntaoli-project/goex/internal/logger"
+	"github.com/fpChan/goex"
+	"github.com/fpChan/goex/internal/logger"
 	"sort"
 	"strings"
 )

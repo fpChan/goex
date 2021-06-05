@@ -2,7 +2,7 @@ package monitor
 
 import (
 	"fmt"
-	"github.com/nntaoli-project/goex"
+	"github.com/fpChan/goex"
 	"log"
 	"net/http"
 	"net/url"
@@ -54,7 +54,7 @@ func (tgMonitor TelegramMonitor) Start() error {
 				tgMonitor.send(msg)
 			}
 
-		case <-time.After(45 * time.Second):
+		case <-time.After(30 * time.Second):
 			var msg = ""
 			for _, symbol := range tgMonitor.targetSymbols {
 				candles, err := tgMonitor.futureClient.GetKlineRecords(goex.SWAP_CONTRACT, symbol, goex.KLINE_PERIOD_1MIN, 0)

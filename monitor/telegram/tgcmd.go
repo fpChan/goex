@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/nntaoli-project/goex"
-	"github.com/nntaoli-project/goex/monitor"
-	"github.com/nntaoli-project/goex/okex"
+	"github.com/fpChan/goex"
+	"github.com/fpChan/goex/monitor"
+	"github.com/fpChan/goex/okex"
 	"net/http"
 	"net/url"
 )

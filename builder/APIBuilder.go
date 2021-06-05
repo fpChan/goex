@@ -4,16 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	. "github.com/nntaoli-project/goex"
-	"github.com/nntaoli-project/goex/binance"
-	"github.com/nntaoli-project/goex/bitmex"
+	. "github.com/fpChan/goex"
+	"github.com/fpChan/goex/binance"
+	"github.com/fpChan/goex/bitmex"
 	"net"
 	"net/http"
 	"net/url"
 	"time"
 
-	"github.com/nntaoli-project/goex/huobi"
-	"github.com/nntaoli-project/goex/okex"
+	"github.com/fpChan/goex/huobi"
+	"github.com/fpChan/goex/okex"
 )
 
 type APIBuilder struct {
