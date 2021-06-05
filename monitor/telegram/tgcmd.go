@@ -12,24 +12,32 @@ const (
 	tgURL       = "https://api.telegram.org/bot1830414088:AAGMc_sB_XWcqmY7AebZX2eW1SpGu3pAZOE/sendMessage"
 	tgChatID    = "879754066"
 	okexURL     = "https://www.okex.com"
-	proxyScheme = "socks5"
+	proxyScheme = "" //"socks5"
 	proxyHost   = "127.0.0.1:10000"
 )
 
 func main() {
+	var client = &http.Client{
+		Transport: &http.Transport{},
+	}
 
-	var monitorTool monitor.Monitor
-	var okEx = okex.NewOKEx(&goex.APIConfig{
-		Endpoint: okexURL,
-		HttpClient: &http.Client{
+	if proxyScheme != "" {
+		client = &http.Client{
 			Transport: &http.Transport{
 				Proxy: func(req *http.Request) (*url.URL, error) {
 					return &url.URL{
 						Scheme: proxyScheme,
-						Host:   proxyHost}, nil
+						Host:   proxyHost,
+					}, nil
 				},
 			},
-		},
+		}
+	}
+
+	var monitorTool monitor.Monitor
+	var okEx = okex.NewOKEx(&goex.APIConfig{
+		Endpoint:      okexURL,
+		HttpClient:    client,
 		ApiKey:        "",
 		ApiSecretKey:  "",
 		ApiPassphrase: "",
