@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	. "github.com/fpChan/goex"
 	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/internal/logger"
 	"github.com/fpChan/goex/types"
@@ -138,8 +137,8 @@ func (swap *HbdmSwap) GetFutureDepth(currencyPair types.CurrencyPair, contractTy
 			break
 		}
 		dep.BidList = append(dep.BidList, types.DepthRecord{
-			Price:  ToFloat64(item[0]),
-			Amount: ToFloat64(item[1]),
+			Price:  types.ToFloat64(item[0]),
+			Amount: types.ToFloat64(item[1]),
 		})
 	}
 
@@ -148,8 +147,8 @@ func (swap *HbdmSwap) GetFutureDepth(currencyPair types.CurrencyPair, contractTy
 			break
 		}
 		dep.AskList = append(dep.AskList, types.DepthRecord{
-			Price:  ToFloat64(item[0]),
-			Amount: ToFloat64(item[1]),
+			Price:  types.ToFloat64(item[0]),
+			Amount: types.ToFloat64(item[1]),
 		})
 	}
 
@@ -236,8 +235,8 @@ func (swap *HbdmSwap) LimitFuturesOrder(currencyPair types.CurrencyPair, contrac
 	return &types.FutureOrder{
 		Currency:     currencyPair,
 		OrderID2:     orderId,
-		Amount:       ToFloat64(amount),
-		Price:        ToFloat64(price),
+		Amount:       types.ToFloat64(amount),
+		Price:        types.ToFloat64(price),
 		OType:        openType,
 		ContractName: contractType,
 	}, err
@@ -248,7 +247,7 @@ func (swap *HbdmSwap) MarketFuturesOrder(currencyPair types.CurrencyPair, contra
 	return &types.FutureOrder{
 		Currency:     currencyPair,
 		OrderID2:     orderId,
-		Amount:       ToFloat64(amount),
+		Amount:       types.ToFloat64(amount),
 		OType:        openType,
 		ContractName: contractType,
 	}, err
@@ -396,7 +395,7 @@ func (swap *HbdmSwap) GetFutureOrderHistory(pair types.CurrencyPair, contractTyp
 		return nil, errors.New("contract type is error")
 	}
 
-	MergeOptionalParameter(&params, optional...)
+	types.MergeOptionalParameter(&params, optional...)
 
 	var historyOrderResp struct {
 		Orders     []OrderInfo `json:"orders"`

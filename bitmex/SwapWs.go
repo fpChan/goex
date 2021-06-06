@@ -3,7 +3,6 @@ package bitmex
 import (
 	"encoding/json"
 	"fmt"
-	. "github.com/fpChan/goex"
 	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/internal/logger"
 	"github.com/fpChan/goex/types"
@@ -150,15 +149,15 @@ func (s *SwapWs) handle(data []byte) error {
 
 		for _, item := range depthData[0].Bids {
 			dep.BidList = append(dep.BidList, types.DepthRecord{
-				Price:  ToFloat64(item[0]),
-				Amount: ToFloat64(item[1]),
+				Price:  types.ToFloat64(item[0]),
+				Amount: types.ToFloat64(item[1]),
 			})
 		}
 
 		for _, item := range depthData[0].Asks {
 			dep.AskList = append(dep.AskList, types.DepthRecord{
-				Price:  ToFloat64(item[0]),
-				Amount: ToFloat64(item[1]),
+				Price:  types.ToFloat64(item[0]),
+				Amount: types.ToFloat64(item[1]),
 			})
 		}
 

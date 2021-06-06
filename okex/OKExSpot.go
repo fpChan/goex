@@ -2,7 +2,6 @@ package okex
 
 import (
 	"fmt"
-	. "github.com/fpChan/goex"
 	"github.com/fpChan/goex/common/exchange"
 	"github.com/fpChan/goex/internal/logger"
 	"github.com/fpChan/goex/types"
@@ -114,7 +113,7 @@ func (ok *OKExSpot) BatchPlaceOrders(orders []types.Order) ([]PlaceOrderResponse
 func (ok *OKExSpot) PlaceOrder(ty string, ord *types.Order) (*types.Order, error) {
 	urlPath := "/api/spot/v3/orders"
 	param := PlaceOrderParam{
-		ClientOid:    GenerateOrderClientId(32),
+		ClientOid:    types.GenerateOrderClientId(32),
 		InstrumentId: ord.Currency.AdaptUsdToUsdt().ToLower().ToSymbol("-"),
 	}
 
@@ -156,7 +155,7 @@ func (ok *OKExSpot) PlaceOrder(ty string, ord *types.Order) (*types.Order, error
 	}
 
 	if !response.Result {
-		return nil, errors.New(int32(ToInt(response.ErrorCode)), response.ErrorMessage)
+		return nil, errors.New(int32(types.ToInt(response.ErrorCode)), response.ErrorMessage)
 	}
 
 	ord.Cid = response.ClientOid
@@ -171,8 +170,8 @@ func (ok *OKExSpot) LimitBuy(amount, price string, currency types.CurrencyPair, 
 		ty = opt[0].String()
 	}
 	return ok.PlaceOrder(ty, &types.Order{
-		Price:    ToFloat64(price),
-		Amount:   ToFloat64(amount),
+		Price:    types.ToFloat64(price),
+		Amount:   types.ToFloat64(amount),
 		Currency: currency,
 		Side:     types.BUY,
 	})
@@ -184,8 +183,8 @@ func (ok *OKExSpot) LimitSell(amount, price string, currency types.CurrencyPair,
 		ty = opt[0].String()
 	}
 	return ok.PlaceOrder(ty, &types.Order{
-		Price:    ToFloat64(price),
-		Amount:   ToFloat64(amount),
+		Price:    types.ToFloat64(price),
+		Amount:   types.ToFloat64(amount),
 		Currency: currency,
 		Side:     types.SELL,
 	})
@@ -193,8 +192,8 @@ func (ok *OKExSpot) LimitSell(amount, price string, currency types.CurrencyPair,
 
 func (ok *OKExSpot) MarketBuy(amount, price string, currency types.CurrencyPair) (*types.Order, error) {
 	return ok.PlaceOrder("market", &types.Order{
-		Price:    ToFloat64(price),
-		Amount:   ToFloat64(amount),
+		Price:    types.ToFloat64(price),
+		Amount:   types.ToFloat64(amount),
 		Currency: currency,
 		Side:     types.BUY_MARKET,
 	})
@@ -202,8 +201,8 @@ func (ok *OKExSpot) MarketBuy(amount, price string, currency types.CurrencyPair)
 
 func (ok *OKExSpot) MarketSell(amount, price string, currency types.CurrencyPair) (*types.Order, error) {
 	return ok.PlaceOrder("market", &types.Order{
-		Price:    ToFloat64(price),
-		Amount:   ToFloat64(amount),
+		Price:    types.ToFloat64(price),
+		Amount:   types.ToFloat64(amount),
 		Currency: currency,
 		Side:     types.SELL_MARKET,
 	})
@@ -255,25 +254,25 @@ func (ok *OKExSpot) adaptOrder(response OrderResponse) *types.Order {
 	ordInfo := &types.Order{
 		Cid:        response.ClientOid,
 		OrderID2:   response.OrderId,
-		Price:      ToFloat64(response.Price),
+		Price:      types.ToFloat64(response.Price),
 		Amount:     response.Size,
-		AvgPrice:   ToFloat64(response.PriceAvg),
-		DealAmount: ToFloat64(response.FilledSize),
+		AvgPrice:   types.ToFloat64(response.PriceAvg),
+		DealAmount: types.ToFloat64(response.FilledSize),
 		Status:     ok.adaptOrderState(response.State),
-		Fee:        ToFloat64(response.Fee)}
+		Fee:        types.ToFloat64(response.Fee)}
 
 	switch response.Side {
 	case "buy":
 		if response.Type == "market" {
 			ordInfo.Side = types.BUY_MARKET
-			ordInfo.DealAmount = ToFloat64(response.Notional) //成交金额
+			ordInfo.DealAmount = types.ToFloat64(response.Notional) //成交金额
 		} else {
 			ordInfo.Side = types.BUY
 		}
 	case "sell":
 		if response.Type == "market" {
 			ordInfo.Side = types.SELL_MARKET
-			ordInfo.DealAmount = ToFloat64(response.Notional) //成交数量
+			ordInfo.DealAmount = types.ToFloat64(response.Notional) //成交数量
 		} else {
 			ordInfo.Side = types.SELL
 		}
@@ -333,7 +332,7 @@ func (ok *OKExSpot) GetOrderHistorys(currency types.CurrencyPair, optional ...ty
 	param := url.Values{}
 	param.Set("instrument_id", currency.AdaptUsdToUsdt().ToSymbol("-"))
 	param.Set("state", "7")
-	MergeOptionalParameter(&param, optional...)
+	types.MergeOptionalParameter(&param, optional...)
 
 	urlPath += "?" + param.Encode()
 
@@ -408,15 +407,15 @@ func (ok *OKExSpot) GetDepth(size int, currency types.CurrencyPair) (*types.Dept
 
 	for _, itm := range response.Asks {
 		dep.AskList = append(dep.AskList, types.DepthRecord{
-			Price:  ToFloat64(itm[0]),
-			Amount: ToFloat64(itm[1]),
+			Price:  types.ToFloat64(itm[0]),
+			Amount: types.ToFloat64(itm[1]),
 		})
 	}
 
 	for _, itm := range response.Bids {
 		dep.BidList = append(dep.BidList, types.DepthRecord{
-			Price:  ToFloat64(itm[0]),
-			Amount: ToFloat64(itm[1]),
+			Price:  types.ToFloat64(itm[0]),
+			Amount: types.ToFloat64(itm[1]),
 		})
 	}
 
@@ -429,7 +428,7 @@ func (ok *OKExSpot) GetKlineRecords(currency types.CurrencyPair, period types.Kl
 	urlPath := "/api/spot/v3/instruments/%s/candles?granularity=%d"
 
 	optParam := url.Values{}
-	MergeOptionalParameter(&optParam, optional...)
+	types.MergeOptionalParameter(&optParam, optional...)
 	urlPath += "&" + optParam.Encode()
 
 	granularity := 60
@@ -472,11 +471,11 @@ func (ok *OKExSpot) GetKlineRecords(currency types.CurrencyPair, period types.Kl
 		klines = append(klines, types.Kline{
 			Timestamp: t.Unix(),
 			Pair:      currency,
-			Open:      ToFloat64(itm[1]),
-			High:      ToFloat64(itm[2]),
-			Low:       ToFloat64(itm[3]),
-			Close:     ToFloat64(itm[4]),
-			Vol:       ToFloat64(itm[5])})
+			Open:      types.ToFloat64(itm[1]),
+			High:      types.ToFloat64(itm[2]),
+			Low:       types.ToFloat64(itm[3]),
+			Close:     types.ToFloat64(itm[4]),
+			Vol:       types.ToFloat64(itm[5])})
 	}
 
 	return klines, nil

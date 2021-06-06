@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	. "github.com/fpChan/goex"
 	"github.com/fpChan/goex/internal/logger"
 )
 
@@ -262,13 +261,13 @@ func (ok *OKExFuture) GetFutureDepth(currencyPair types.CurrencyPair, contractTy
 	dep.UTime, _ = time.Parse(time.RFC3339, response.Timestamp)
 	for _, itm := range response.Asks {
 		dep.AskList = append(dep.AskList, types.DepthRecord{
-			Price:  ToFloat64(itm[0]),
-			Amount: ToFloat64(itm[1])})
+			Price:  types.ToFloat64(itm[0]),
+			Amount: types.ToFloat64(itm[1])})
 	}
 	for _, itm := range response.Bids {
 		dep.BidList = append(dep.BidList, types.DepthRecord{
-			Price:  ToFloat64(itm[0]),
-			Amount: ToFloat64(itm[1])})
+			Price:  types.ToFloat64(itm[0]),
+			Amount: types.ToFloat64(itm[1])})
 	}
 	sort.Sort(sort.Reverse(dep.AskList))
 	return &dep, nil
@@ -351,11 +350,11 @@ func (ok *OKExFuture) GetFutureUserinfo(currencyPair ...types.CurrencyPair) (*ty
 			currency := types.NewCurrency(c, "")
 			acc.FutureSubAccounts[currency] = types.FutureSubAccount{
 				Currency:      currency,
-				AccountRights: ToFloat64(info["equity"]),
-				ProfitReal:    ToFloat64(info["realized_pnl"]),
-				ProfitUnreal:  ToFloat64(info["unrealized_pnl"]),
-				KeepDeposit:   ToFloat64(info["margin_frozen"]),
-				RiskRate:      ToFloat64(info["margin_ratio"]),
+				AccountRights: types.ToFloat64(info["equity"]),
+				ProfitReal:    types.ToFloat64(info["realized_pnl"]),
+				ProfitUnreal:  types.ToFloat64(info["unrealized_pnl"]),
+				KeepDeposit:   types.ToFloat64(info["margin_frozen"]),
+				RiskRate:      types.ToFloat64(info["margin_ratio"]),
 			}
 		} else {
 			//todo 逐仓模式
@@ -372,10 +371,10 @@ func (ok *OKExFuture) normalizePrice(price float64, pair types.CurrencyPair) str
 				bit++
 				info.TickSize *= 10
 			}
-			return FloatToString(price, bit)
+			return types.FloatToString(price, bit)
 		}
 	}
-	return FloatToString(price, 2)
+	return types.FloatToString(price, 2)
 }
 
 //matchPrice:是否以对手价下单(0:不是 1:是)，默认为0;当取值为1时,price字段无效，当以对手价下单，order_type只能选择0:普通委托
@@ -403,7 +402,7 @@ func (ok *OKExFuture) PlaceFutureOrder2(matchPrice int, ord *types.FutureOrder) 
 		return nil, errors.New("ord param is nil")
 	}
 	param.InstrumentId = ok.GetFutureContractId(ord.Currency, ord.ContractName)
-	param.ClientOid = GenerateOrderClientId(32)
+	param.ClientOid = types.GenerateOrderClientId(32)
 	param.Type = ord.OType
 	param.OrderType = ord.OrderType
 	param.Price = ok.normalizePrice(ord.Price, ord.Currency)
@@ -433,8 +432,8 @@ func (ok *OKExFuture) PlaceFutureOrder2(matchPrice int, ord *types.FutureOrder) 
 
 func (ok *OKExFuture) PlaceFutureOrder(currencyPair types.CurrencyPair, contractType, price, amount string, openType, matchPrice int, leverRate float64) (string, error) {
 	fOrder, err := ok.PlaceFutureOrder2(matchPrice, &types.FutureOrder{
-		Price:        ToFloat64(price),
-		Amount:       ToFloat64(amount),
+		Price:        types.ToFloat64(price),
+		Amount:       types.ToFloat64(amount),
 		OType:        openType,
 		ContractName: contractType,
 		Currency:     currencyPair,
@@ -445,8 +444,8 @@ func (ok *OKExFuture) PlaceFutureOrder(currencyPair types.CurrencyPair, contract
 func (ok *OKExFuture) LimitFuturesOrder(currencyPair types.CurrencyPair, contractType, price, amount string, openType int, opt ...types.LimitOrderOptionalParameter) (*types.FutureOrder, error) {
 	ord := &types.FutureOrder{
 		Currency:     currencyPair,
-		Price:        ToFloat64(price),
-		Amount:       ToFloat64(amount),
+		Price:        types.ToFloat64(price),
+		Amount:       types.ToFloat64(amount),
 		OType:        openType,
 		ContractName: contractType,
 	}
@@ -468,7 +467,7 @@ func (ok *OKExFuture) LimitFuturesOrder(currencyPair types.CurrencyPair, contrac
 func (ok *OKExFuture) MarketFuturesOrder(currencyPair types.CurrencyPair, contractType, amount string, openType int) (*types.FutureOrder, error) {
 	return ok.PlaceFutureOrder2(1, &types.FutureOrder{
 		Currency:     currencyPair,
-		Amount:       ToFloat64(amount),
+		Amount:       types.ToFloat64(amount),
 		OType:        openType,
 		ContractName: contractType,
 	})
@@ -538,7 +537,7 @@ func (ok *OKExFuture) GetFuturePosition(currencyPair types.CurrencyPair, contrac
 		postions = append(postions, types.FuturePosition{
 			Symbol:         currencyPair,
 			ContractType:   contractType,
-			ContractId:     ToInt64(pos.InstrumentId[8:]),
+			ContractId:     types.ToInt64(pos.InstrumentId[8:]),
 			BuyAmount:      pos.LongQty,
 			BuyAvailable:   pos.LongAvailQty,
 			BuyPriceAvg:    pos.LongAvgCost,
@@ -570,7 +569,7 @@ func (ok *OKExFuture) GetFutureOrderHistory(pair types.CurrencyPair, contractTyp
 	param := url.Values{}
 	param.Set("limit", "100")
 	param.Set("state", "7")
-	MergeOptionalParameter(&param, optional...)
+	types.MergeOptionalParameter(&param, optional...)
 	urlPath += param.Encode()
 
 	var response struct {
@@ -709,12 +708,12 @@ func (ok *OKExFuture) GetKlineRecords(contractType string, currency types.Curren
 			Kline: &types.Kline{
 				Timestamp: t.Unix(),
 				Pair:      currency,
-				Open:      ToFloat64(itm[1]),
-				High:      ToFloat64(itm[2]),
-				Low:       ToFloat64(itm[3]),
-				Close:     ToFloat64(itm[4]),
-				Vol:       ToFloat64(itm[5])},
-			Vol2: ToFloat64(itm[6])})
+				Open:      types.ToFloat64(itm[1]),
+				High:      types.ToFloat64(itm[2]),
+				Low:       types.ToFloat64(itm[3]),
+				Close:     types.ToFloat64(itm[4]),
+				Vol:       types.ToFloat64(itm[5])},
+			Vol2: types.ToFloat64(itm[6])})
 	}
 
 	return klines, nil
@@ -748,12 +747,12 @@ func (ok *OKExFuture) GetKlineRecordsByRange(contractType string, currency types
 			Kline: &types.Kline{
 				Timestamp: t.Unix(),
 				Pair:      currency,
-				Open:      ToFloat64(itm[1]),
-				High:      ToFloat64(itm[2]),
-				Low:       ToFloat64(itm[3]),
-				Close:     ToFloat64(itm[4]),
-				Vol:       ToFloat64(itm[5])},
-			Vol2: ToFloat64(itm[6])})
+				Open:      types.ToFloat64(itm[1]),
+				High:      types.ToFloat64(itm[2]),
+				Low:       types.ToFloat64(itm[3]),
+				Close:     types.ToFloat64(itm[4]),
+				Vol:       types.ToFloat64(itm[5])},
+			Vol2: types.ToFloat64(itm[6])})
 	}
 
 	return klines, nil

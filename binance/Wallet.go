@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	. "github.com/fpChan/goex"
 	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/internal/logger"
 	"github.com/fpChan/goex/types"
@@ -66,7 +65,7 @@ func (w *Wallet) Transfer(param types.TransferParameter) error {
 		return err
 	}
 
-	if respmap["tranId"] != nil && ToInt64(respmap["tranId"]) > 0 {
+	if respmap["tranId"] != nil && types.ToInt64(respmap["tranId"]) > 0 {
 		return nil
 	}
 

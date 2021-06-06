@@ -2,7 +2,6 @@ package types
 
 import (
 	"fmt"
-	"github.com/fpChan/goex"
 	"net/http"
 	"time"
 )
@@ -276,15 +275,15 @@ func (optional OptionalParameter) GetString(name string) string {
 }
 
 func (optional OptionalParameter) GetInt(name string) int {
-	return goex.ToInt(optional[name])
+	return ToInt(optional[name])
 }
 
 func (optional OptionalParameter) GetInt64(name string) int64 {
-	return goex.ToInt64(optional[name])
+	return ToInt64(optional[name])
 }
 
 func (optional OptionalParameter) GetFloat64(name string) float64 {
-	return goex.ToFloat64(optional[name])
+	return ToFloat64(optional[name])
 }
 
 func (optional OptionalParameter) GetTime(name string) *time.Time {

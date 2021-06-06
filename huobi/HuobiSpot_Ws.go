@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	. "github.com/fpChan/goex"
 	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/internal/logger"
 	"github.com/fpChan/goex/types"
@@ -31,7 +30,7 @@ func NewSpotWs() *SpotWs {
 	ws.WsBuilder = ws.WsBuilder.
 		WsUrl("wss://api.huobi.pro/ws").
 		AutoReconnect().
-		DecompressFunc(GzipDecompress).
+		DecompressFunc(types.GzipDecompress).
 		ProtoHandleFunc(ws.handle)
 	return ws
 }

@@ -10,8 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	. "github.com/fpChan/goex"
 )
 
 const (
@@ -174,14 +172,14 @@ func (ok *OKExSwap) GetFutureDepth(currencyPair types.CurrencyPair, contractType
 
 	for _, v := range resp.Bids {
 		dep.BidList = append(dep.BidList, types.DepthRecord{
-			Price:  ToFloat64(v[0]),
-			Amount: ToFloat64(v[1])})
+			Price:  types.ToFloat64(v[0]),
+			Amount: types.ToFloat64(v[1])})
 	}
 
 	for i := len(resp.Asks) - 1; i >= 0; i-- {
 		dep.AskList = append(dep.AskList, types.DepthRecord{
-			Price:  ToFloat64(resp.Asks[i][0]),
-			Amount: ToFloat64(resp.Asks[i][1])})
+			Price:  types.ToFloat64(resp.Asks[i][0]),
+			Amount: types.ToFloat64(resp.Asks[i][1])})
 	}
 
 	return &dep, nil
@@ -277,7 +275,7 @@ func (ok *OKExSwap) PlaceFutureOrder(currencyPair types.CurrencyPair, contractTy
 }
 
 func (ok *OKExSwap) PlaceFutureOrder2(currencyPair types.CurrencyPair, contractType, price, amount string, openType, matchPrice int, opt ...types.LimitOrderOptionalParameter) (*types.FutureOrder, error) {
-	cid := GenerateOrderClientId(32)
+	cid := types.GenerateOrderClientId(32)
 	param := PlaceOrderInfo{
 		BasePlaceOrderInfo{
 			ClientOid:  cid,
@@ -308,8 +306,8 @@ func (ok *OKExSwap) PlaceFutureOrder2(currencyPair types.CurrencyPair, contractT
 		Currency:     currencyPair,
 		ContractName: contractType,
 		OType:        openType,
-		Price:        ToFloat64(price),
-		Amount:       ToFloat64(amount),
+		Price:        types.ToFloat64(price),
+		Amount:       types.ToFloat64(amount),
 	}
 
 	var resp struct {
@@ -369,7 +367,7 @@ func (ok *OKExSwap) GetFutureOrderHistory(pair types.CurrencyPair, contractType 
 	param := url.Values{}
 	param.Set("limit", "100")
 	param.Set("state", "7")
-	MergeOptionalParameter(&param, optional...)
+	types.MergeOptionalParameter(&param, optional...)
 
 	var response SwapOrdersInfo
 
@@ -532,7 +530,7 @@ func (ok *OKExSwap) GetFuturePosition(currencyPair types.CurrencyPair, contractT
 		positions[0].SellProfitReal = sellPosition.RealizedPnl
 		positions[0].SellPriceCost = sellPosition.SettlementPrice
 
-		positions[0].LeverRate = ToFloat64(sellPosition.Leverage)
+		positions[0].LeverRate = types.ToFloat64(sellPosition.Leverage)
 	}
 	return positions, nil
 }
@@ -599,12 +597,12 @@ func (ok *OKExSwap) GetKlineRecordsByRange(currency types.CurrencyPair, period, 
 			Kline: &types.Kline{
 				Timestamp: t.Unix(),
 				Pair:      currency,
-				Open:      ToFloat64(itm[1]),
-				High:      ToFloat64(itm[2]),
-				Low:       ToFloat64(itm[3]),
-				Close:     ToFloat64(itm[4]),
-				Vol:       ToFloat64(itm[5])},
-			Vol2: ToFloat64(itm[6])})
+				Open:      types.ToFloat64(itm[1]),
+				High:      types.ToFloat64(itm[2]),
+				Low:       types.ToFloat64(itm[3]),
+				Close:     types.ToFloat64(itm[4]),
+				Vol:       types.ToFloat64(itm[5])},
+			Vol2: types.ToFloat64(itm[6])})
 	}
 
 	return klines, nil
@@ -640,12 +638,12 @@ func (ok *OKExSwap) GetKlineRecords2(contractType string, currency types.Currenc
 			Kline: &types.Kline{
 				Timestamp: t.Unix(),
 				Pair:      currency,
-				Open:      ToFloat64(itm[1]),
-				High:      ToFloat64(itm[2]),
-				Low:       ToFloat64(itm[3]),
-				Close:     ToFloat64(itm[4]),
-				Vol:       ToFloat64(itm[5])},
-			Vol2: ToFloat64(itm[6])})
+				Open:      types.ToFloat64(itm[1]),
+				High:      types.ToFloat64(itm[2]),
+				Low:       types.ToFloat64(itm[3]),
+				Close:     types.ToFloat64(itm[4]),
+				Vol:       types.ToFloat64(itm[5])},
+			Vol2: types.ToFloat64(itm[6])})
 	}
 
 	return kline, nil
@@ -790,7 +788,7 @@ func (ok *OKExSwap) PlaceFutureAlgoOrder(ord *types.FutureOrder) (*types.FutureO
 	param.OrderType = ord.OrderType
 	param.AlgoType = fmt.Sprint(ord.AlgoType)
 	param.TriggerPrice = fmt.Sprint(ord.TriggerPrice)
-	param.AlgoPrice = fmt.Sprint(ToFloat64(ord.Price))
+	param.AlgoPrice = fmt.Sprint(types.ToFloat64(ord.Price))
 	param.Size = fmt.Sprint(ord.Amount)
 
 	reqBody, _, _ := ok.BuildRequestBody(param)
@@ -882,16 +880,16 @@ func (ok *OKExSwap) GetFutureAlgoOrders(algo_id string, status string, currencyP
 
 		ord := types.FutureOrder{
 			OrderID2:     info.AlgoId,
-			Price:        ToFloat64(info.AlgoPrice),
-			Amount:       ToFloat64(info.Size),
-			AvgPrice:     ToFloat64(info.RealPrice),
-			DealAmount:   ToFloat64(info.RealAmount),
+			Price:        types.ToFloat64(info.AlgoPrice),
+			Amount:       types.ToFloat64(info.Size),
+			AvgPrice:     types.ToFloat64(info.RealPrice),
+			DealAmount:   types.ToFloat64(info.RealAmount),
 			OrderTime:    oTime.UnixNano() / int64(time.Millisecond),
-			Status:       ok.AdaptTradeStatus(ToInt(info.Status)),
+			Status:       ok.AdaptTradeStatus(types.ToInt(info.Status)),
 			Currency:     types.CurrencyPair{},
-			OrderType:    ToInt(info.OrderType),
-			OType:        ToInt(info.Type),
-			TriggerPrice: ToFloat64(info.TriggerPrice),
+			OrderType:    types.ToInt(info.OrderType),
+			OType:        types.ToInt(info.Type),
+			TriggerPrice: types.ToFloat64(info.TriggerPrice),
 		}
 		ord.Currency = currencyPair
 		orders = append(orders, ord)

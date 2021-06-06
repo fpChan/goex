@@ -12,8 +12,6 @@ import (
 	"sort"
 	"strings"
 	"time"
-
-	. "github.com/fpChan/goex"
 )
 
 type Hbdm struct {
@@ -218,7 +216,7 @@ func (dm *Hbdm) GetFuturePosition(currencyPair types.CurrencyPair, contractType 
 
 		pos := positionMap[d.ContractCode]
 		pos.ContractType = d.ContractType
-		pos.ContractId = int64(ToInt(d.ContractCode[3:]))
+		pos.ContractId = int64(types.ToInt(d.ContractCode[3:]))
 		pos.Symbol = currencyPair
 
 		switch d.Direction {
@@ -323,8 +321,8 @@ func (dm *Hbdm) PlaceFutureOrder2(currencyPair types.CurrencyPair, contractType,
 		ClientOid:    params.Get("client_order_id"),
 		ContractName: contractType,
 		Currency:     currencyPair,
-		Price:        ToFloat64(price),
-		Amount:       ToFloat64(amount),
+		Price:        types.ToFloat64(price),
+		Amount:       types.ToFloat64(amount),
 		OType:        openType,
 	}
 
@@ -470,7 +468,7 @@ func (dm *Hbdm) GetFutureOrderHistory(pair types.CurrencyPair, contractType stri
 	param.Set("status", "0")
 	param.Set("size", "50")
 
-	MergeOptionalParameter(&param, optional...)
+	types.MergeOptionalParameter(&param, optional...)
 
 	var data struct {
 		Orders     []OrderInfo `json:"orders"`
@@ -524,7 +522,7 @@ func (dm *Hbdm) GetFutureEstimatedPrice(currencyPair types.CurrencyPair) (float6
 		return -1, errors.New(fmt.Sprintf("%+v", ret))
 	}
 
-	return ToFloat64(ret["data"].(map[string]interface{})["delivery_price"]), nil
+	return types.ToFloat64(ret["data"].(map[string]interface{})["delivery_price"]), nil
 }
 
 func (dm *Hbdm) GetFutureTicker(currencyPair types.CurrencyPair, contractType string) (*types.Ticker, error) {
@@ -547,13 +545,13 @@ func (dm *Hbdm) GetFutureTicker(currencyPair types.CurrencyPair, contractType st
 	}
 	return &types.Ticker{
 		Pair: currencyPair,
-		Last: ToFloat64(tick["close"]),
-		Vol:  ToFloat64(tick["amount"]),
-		Low:  ToFloat64(tick["low"]),
-		High: ToFloat64(tick["high"]),
-		Sell: ToFloat64(ask[0]),
-		Buy:  ToFloat64(bid[0]),
-		Date: ToUint64(ret["ts"])}, nil
+		Last: types.ToFloat64(tick["close"]),
+		Vol:  types.ToFloat64(tick["amount"]),
+		Low:  types.ToFloat64(tick["low"]),
+		High: types.ToFloat64(tick["high"]),
+		Sell: types.ToFloat64(ask[0]),
+		Buy:  types.ToFloat64(bid[0]),
+		Date: types.ToUint64(ret["ts"])}, nil
 }
 
 func (dm *Hbdm) GetFutureDepth(currencyPair types.CurrencyPair, contractType string, size int) (*types.Depth, error) {
@@ -573,7 +571,7 @@ func (dm *Hbdm) GetFutureDepth(currencyPair types.CurrencyPair, contractType str
 	dep.Pair = currencyPair
 	dep.ContractType = symbol
 
-	mills := ToUint64(ret["ts"])
+	mills := types.ToUint64(ret["ts"])
 	dep.UTime = time.Unix(int64(mills/1000), int64(mills%1000)*int64(time.Millisecond))
 
 	tick, ok1 := ret["tick"].(map[string]interface{})
@@ -586,12 +584,12 @@ func (dm *Hbdm) GetFutureDepth(currencyPair types.CurrencyPair, contractType str
 
 	for _, item := range asks {
 		askItem := item.([]interface{})
-		dep.AskList = append(dep.AskList, types.DepthRecord{ToFloat64(askItem[0]), ToFloat64(askItem[1])})
+		dep.AskList = append(dep.AskList, types.DepthRecord{types.ToFloat64(askItem[0]), types.ToFloat64(askItem[1])})
 	}
 
 	for _, item := range bids {
 		bidItem := item.([]interface{})
-		dep.BidList = append(dep.BidList, types.DepthRecord{ToFloat64(bidItem[0]), ToFloat64(bidItem[1])})
+		dep.BidList = append(dep.BidList, types.DepthRecord{types.ToFloat64(bidItem[0]), types.ToFloat64(bidItem[1])})
 	}
 
 	sort.Sort(sort.Reverse(dep.AskList))
@@ -611,7 +609,7 @@ func (dm *Hbdm) GetFutureIndex(currencyPair types.CurrencyPair) (float64, error)
 
 	datamap := ret["data"].([]interface{})
 	index := datamap[0].(map[string]interface{})["index_price"]
-	return ToFloat64(index), nil
+	return types.ToFloat64(index), nil
 }
 
 func (dm *Hbdm) GetKlineRecords(contract_type string, currency types.CurrencyPair, period types.KlinePeriod, size int, opt ...types.OptionalParameter) ([]types.FutureKline, error) {
@@ -772,7 +770,7 @@ func (dm *Hbdm) buildPostForm(reqMethod, path string, postForm *url.Values) erro
 	postForm.Set("Timestamp", time.Now().UTC().Format("2006-01-02T15:04:05"))
 	domain := strings.Replace(dm.config.Endpoint, "https://", "", len(dm.config.Endpoint))
 	payload := fmt.Sprintf("%s\n%s\n%s\n%s", reqMethod, domain, path, postForm.Encode())
-	sign, _ := GetParamHmacSHA256Base64Sign(dm.config.ApiSecretKey, payload)
+	sign, _ := types.GetParamHmacSHA256Base64Sign(dm.config.ApiSecretKey, payload)
 	postForm.Set("Signature", sign)
 
 	return nil
@@ -780,7 +778,7 @@ func (dm *Hbdm) buildPostForm(reqMethod, path string, postForm *url.Values) erro
 
 func (dm *Hbdm) doRequest(path string, params *url.Values, data interface{}) error {
 	dm.buildPostForm("POST", path, params)
-	jsonD, _ := ValuesToJson(*params)
+	jsonD, _ := types.ValuesToJson(*params)
 	//log.Println(string(jsonD))
 
 	var ret BaseResponse
@@ -822,5 +820,5 @@ func (dm *Hbdm) formatPriceSize(contract string, currency types.Currency, price 
 			break
 		}
 	}
-	return FloatToString(ToFloat64(price), tickSize)
+	return types.FloatToString(types.ToFloat64(price), tickSize)
 }

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	. "github.com/fpChan/goex"
 	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/internal/logger"
 	"github.com/fpChan/goex/types"
@@ -118,7 +117,7 @@ func (ok *OKEx) doParamSign(httpMethod, uri, requestBody string) (string, string
 	timestamp := ok.IsoTime()
 	preText := fmt.Sprintf("%s%s%s%s", timestamp, strings.ToUpper(httpMethod), uri, requestBody)
 	//log.Println("preHash", preText)
-	sign, _ := GetParamHmacSHA256Base64Sign(ok.config.ApiSecretKey, preText)
+	sign, _ := types.GetParamHmacSHA256Base64Sign(ok.config.ApiSecretKey, preText)
 	return sign, timestamp
 }
 

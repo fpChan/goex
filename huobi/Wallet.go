@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	. "github.com/fpChan/goex"
 	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/internal/logger"
 	"github.com/fpChan/goex/types"
@@ -37,7 +36,7 @@ func (w *Wallet) Transfer(param types.TransferParameter) error {
 
 	httpParam := url.Values{}
 	httpParam.Set("currency", strings.ToLower(param.Currency))
-	httpParam.Set("amount", FloatToString(param.Amount, 8))
+	httpParam.Set("amount", types.FloatToString(param.Amount, 8))
 
 	path := ""
 
@@ -86,7 +85,7 @@ func (w *Wallet) Transfer(param types.TransferParameter) error {
 
 	w.pro.buildPostForm("POST", path, &httpParam)
 
-	postJsonParam, _ := ValuesToJson(httpParam)
+	postJsonParam, _ := types.ValuesToJson(httpParam)
 	responseBody, err := api.HttpPostForm3(w.pro.httpClient,
 		fmt.Sprintf("%s%s?%s", w.pro.baseUrl, path, httpParam.Encode()),
 		string(postJsonParam),

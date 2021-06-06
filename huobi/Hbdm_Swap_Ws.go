@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	. "github.com/fpChan/goex"
 	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/common/exchange"
 	"github.com/fpChan/goex/internal/logger"
@@ -31,7 +30,7 @@ func NewHbdmSwapWs() *HbdmSwapWs {
 		WsUrl("wss://api.hbdm.com/swap-ws").
 		//ProxyUrl("socks5://127.0.0.1:1080").
 		AutoReconnect().
-		DecompressFunc(GzipDecompress).
+		DecompressFunc(types.GzipDecompress).
 		ProtoHandleFunc(ws.handle)
 	return ws
 }
@@ -43,7 +42,7 @@ func NewHbdmLinearSwapWs() *HbdmSwapWs {
 		WsUrl("wss://api.hbdm.com/linear-swap-ws").
 		//ProxyUrl("socks5://127.0.0.1:1080").
 		AutoReconnect().
-		DecompressFunc(GzipDecompress).
+		DecompressFunc(types.GzipDecompress).
 		ProtoHandleFunc(ws.handle)
 	return ws
 }

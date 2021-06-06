@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	. "github.com/fpChan/goex"
 	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/common/exchange"
 	"github.com/fpChan/goex/types"
@@ -175,7 +174,7 @@ func (bn *Binance) buildParamsSigned(postForm *url.Values) error {
 	tonce := strconv.FormatInt(time.Now().UnixNano()+bn.timeOffset, 10)[0:13]
 	postForm.Set("timestamp", tonce)
 	payload := postForm.Encode()
-	sign, _ := GetParamHmacSHA256Sign(bn.secretKey, payload)
+	sign, _ := types.GetParamHmacSHA256Sign(bn.secretKey, payload)
 	postForm.Set("signature", sign)
 	return nil
 }
@@ -222,7 +221,7 @@ func (bn *Binance) setTimeOffset() error {
 		return err
 	}
 
-	stime := int64(ToInt(respmap["serverTime"]))
+	stime := int64(types.ToInt(respmap["serverTime"]))
 	st := time.Unix(stime/1000, 1000000*(stime%1000))
 	lt := time.Now()
 	offset := st.Sub(lt).Nanoseconds()
@@ -242,12 +241,12 @@ func (bn *Binance) GetTicker(currency types.CurrencyPair) (*types.Ticker, error)
 	ticker.Pair = currency
 	t, _ := tickerMap["closeTime"].(float64)
 	ticker.Date = uint64(t / 1000)
-	ticker.Last = ToFloat64(tickerMap["lastPrice"])
-	ticker.Buy = ToFloat64(tickerMap["bidPrice"])
-	ticker.Sell = ToFloat64(tickerMap["askPrice"])
-	ticker.Low = ToFloat64(tickerMap["lowPrice"])
-	ticker.High = ToFloat64(tickerMap["highPrice"])
-	ticker.Vol = ToFloat64(tickerMap["volume"])
+	ticker.Last = types.ToFloat64(tickerMap["lastPrice"])
+	ticker.Buy = types.ToFloat64(tickerMap["bidPrice"])
+	ticker.Sell = types.ToFloat64(tickerMap["askPrice"])
+	ticker.Low = types.ToFloat64(tickerMap["lowPrice"])
+	ticker.High = types.ToFloat64(tickerMap["highPrice"])
+	ticker.Vol = types.ToFloat64(tickerMap["volume"])
 	return &ticker, nil
 }
 
@@ -287,8 +286,8 @@ func (bn *Binance) GetDepth(size int, currencyPair types.CurrencyPair) (*types.D
 	n := 0
 	for _, bid := range bids {
 		_bid := bid.([]interface{})
-		amount := ToFloat64(_bid[1])
-		price := ToFloat64(_bid[0])
+		amount := types.ToFloat64(_bid[1])
+		price := types.ToFloat64(_bid[0])
 		dr := types.DepthRecord{Amount: amount, Price: price}
 		depth.BidList = append(depth.BidList, dr)
 		n++
@@ -300,8 +299,8 @@ func (bn *Binance) GetDepth(size int, currencyPair types.CurrencyPair) (*types.D
 	n = 0
 	for _, ask := range asks {
 		_ask := ask.([]interface{})
-		amount := ToFloat64(_ask[1])
-		price := ToFloat64(_ask[0])
+		amount := types.ToFloat64(_ask[1])
+		price := types.ToFloat64(_ask[0])
 		dr := types.DepthRecord{Amount: amount, Price: price}
 		depth.AskList = append(depth.AskList, dr)
 		n++
@@ -346,7 +345,7 @@ func (bn *Binance) placeOrder(amount, price string, pair types.CurrencyPair, ord
 		return nil, err
 	}
 
-	orderId := ToInt(respmap["orderId"])
+	orderId := types.ToInt(respmap["orderId"])
 	if orderId <= 0 {
 		return nil, errors.New(string(resp))
 	}
@@ -356,8 +355,8 @@ func (bn *Binance) placeOrder(amount, price string, pair types.CurrencyPair, ord
 		side = types.SELL
 	}
 
-	dealAmount := ToFloat64(respmap["executedQty"])
-	cummulativeQuoteQty := ToFloat64(respmap["cummulativeQuoteQty"])
+	dealAmount := types.ToFloat64(respmap["executedQty"])
+	cummulativeQuoteQty := types.ToFloat64(respmap["cummulativeQuoteQty"])
 	avgPrice := 0.0
 	if cummulativeQuoteQty > 0 && dealAmount > 0 {
 		avgPrice = cummulativeQuoteQty / dealAmount
@@ -367,13 +366,13 @@ func (bn *Binance) placeOrder(amount, price string, pair types.CurrencyPair, ord
 		Currency:   pair,
 		OrderID:    orderId,
 		OrderID2:   strconv.Itoa(orderId),
-		Price:      ToFloat64(price),
-		Amount:     ToFloat64(amount),
+		Price:      types.ToFloat64(price),
+		Amount:     types.ToFloat64(amount),
 		DealAmount: dealAmount,
 		AvgPrice:   avgPrice,
 		Side:       types.TradeSide(side),
 		Status:     types.ORDER_UNFINISH,
-		OrderTime:  ToInt(respmap["transactTime"])}, nil
+		OrderTime:  types.ToInt(respmap["transactTime"])}, nil
 }
 
 func (bn *Binance) GetAccount() (*types.Account, error) {
@@ -397,8 +396,8 @@ func (bn *Binance) GetAccount() (*types.Account, error) {
 		currency := types.NewCurrency(vv["asset"].(string), "").AdaptBccToBch()
 		acc.SubAccounts[currency] = types.SubAccount{
 			Currency:     currency,
-			Amount:       ToFloat64(vv["free"]),
-			ForzenAmount: ToFloat64(vv["locked"]),
+			Amount:       types.ToFloat64(vv["free"]),
+			ForzenAmount: types.ToFloat64(vv["locked"]),
 		}
 	}
 
@@ -441,7 +440,7 @@ func (bn *Binance) CancelOrder(orderId string, currencyPair types.CurrencyPair) 
 		return false, err
 	}
 
-	orderIdCanceled := ToInt(respmap["orderId"])
+	orderIdCanceled := types.ToInt(respmap["orderId"])
 	if orderIdCanceled <= 0 {
 		return false, errors.New(string(resp))
 	}
@@ -496,7 +495,7 @@ func (bn *Binance) GetKlineRecords(currency types.CurrencyPair, period types.Kli
 	params.Set("symbol", currency.ToSymbol(""))
 	params.Set("interval", _INERNAL_KLINE_PERIOD_CONVERTER[period])
 	params.Set("limit", fmt.Sprintf("%d", size))
-	MergeOptionalParameter(&params, optional...)
+	types.MergeOptionalParameter(&params, optional...)
 
 	klineUrl := bn.apiV3 + KLINE_URI + "?" + params.Encode()
 	klines, err := api.HttpGet3(bn.httpClient, klineUrl, nil)
@@ -509,11 +508,11 @@ func (bn *Binance) GetKlineRecords(currency types.CurrencyPair, period types.Kli
 		r := types.Kline{Pair: currency}
 		record := _record.([]interface{})
 		r.Timestamp = int64(record[0].(float64)) / 1000 //to unix timestramp
-		r.Open = ToFloat64(record[1])
-		r.High = ToFloat64(record[2])
-		r.Low = ToFloat64(record[3])
-		r.Close = ToFloat64(record[4])
-		r.Vol = ToFloat64(record[5])
+		r.Open = types.ToFloat64(record[1])
+		r.High = types.ToFloat64(record[2])
+		r.Low = types.ToFloat64(record[3])
+		r.Close = types.ToFloat64(record[4])
+		r.Vol = types.ToFloat64(record[5])
 
 		klineRecords = append(klineRecords, r)
 	}
@@ -546,11 +545,11 @@ func (bn *Binance) GetTrades(currencyPair types.CurrencyPair, since int64) ([]ty
 			ty = types.BUY
 		}
 		trades = append(trades, types.Trade{
-			Tid:    ToInt64(m["id"]),
+			Tid:    types.ToInt64(m["id"]),
 			Type:   ty,
-			Amount: ToFloat64(m["qty"]),
-			Price:  ToFloat64(m["price"]),
-			Date:   ToInt64(m["time"]),
+			Amount: types.ToFloat64(m["qty"]),
+			Price:  types.ToFloat64(m["price"]),
+			Date:   types.ToInt64(m["time"]),
 			Pair:   currencyPair,
 		})
 	}
@@ -561,7 +560,7 @@ func (bn *Binance) GetTrades(currencyPair types.CurrencyPair, since int64) ([]ty
 func (bn *Binance) GetOrderHistorys(currency types.CurrencyPair, optional ...types.OptionalParameter) ([]types.Order, error) {
 	params := url.Values{}
 	params.Set("symbol", currency.AdaptUsdToUsdt().ToSymbol(""))
-	MergeOptionalParameter(&params, optional...)
+	types.MergeOptionalParameter(&params, optional...)
 	bn.buildParamsSigned(&params)
 
 	path := bn.apiV3 + "allOrders?" + params.Encode()
@@ -654,25 +653,25 @@ func (bn *Binance) adaptOrder(currencyPair types.CurrencyPair, orderMap map[stri
 		orderSide = types.BUY
 	}
 
-	quoteQty := ToFloat64(orderMap["cummulativeQuoteQty"])
-	qty := ToFloat64(orderMap["executedQty"])
+	quoteQty := types.ToFloat64(orderMap["cummulativeQuoteQty"])
+	qty := types.ToFloat64(orderMap["executedQty"])
 	avgPrice := 0.0
 	if qty > 0 {
-		avgPrice = FloatToFixed(quoteQty/qty, 8)
+		avgPrice = types.FloatToFixed(quoteQty/qty, 8)
 	}
 
 	return types.Order{
-		OrderID:      ToInt(orderMap["orderId"]),
+		OrderID:      types.ToInt(orderMap["orderId"]),
 		OrderID2:     fmt.Sprintf("%.0f", orderMap["orderId"]),
 		Cid:          orderMap["clientOrderId"].(string),
 		Currency:     currencyPair,
-		Price:        ToFloat64(orderMap["price"]),
-		Amount:       ToFloat64(orderMap["origQty"]),
-		DealAmount:   ToFloat64(orderMap["executedQty"]),
+		Price:        types.ToFloat64(orderMap["price"]),
+		Amount:       types.ToFloat64(orderMap["origQty"]),
+		DealAmount:   types.ToFloat64(orderMap["executedQty"]),
 		AvgPrice:     avgPrice,
 		Side:         types.TradeSide(orderSide),
 		Status:       adaptOrderStatus(orderMap["status"].(string)),
-		OrderTime:    ToInt(orderMap["time"]),
-		FinishedTime: ToInt64(orderMap["updateTime"]),
+		OrderTime:    types.ToInt(orderMap["time"]),
+		FinishedTime: types.ToInt64(orderMap["updateTime"]),
 	}
 }

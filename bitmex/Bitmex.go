@@ -12,8 +12,6 @@ import (
 	"time"
 
 	. "github.com/fpChan/goex/internal/logger"
-
-	. "github.com/fpChan/goex"
 )
 
 const (
@@ -43,7 +41,7 @@ func New(config *types.APIConfig) *bitmex {
 func (bm *bitmex) generateSignature(httpMethod, uri, data, nonce string) string {
 	payload := strings.ToUpper(httpMethod) + uri + nonce + data
 	//println(payload)
-	sign, _ := GetParamHmacSHA256Sign(bm.ApiSecretKey, payload)
+	sign, _ := types.GetParamHmacSHA256Sign(bm.ApiSecretKey, payload)
 	//println(sign)
 	return sign
 }
@@ -142,11 +140,11 @@ func (bm *bitmex) PlaceFutureOrder2(currencyPair types.CurrencyPair, contractTyp
 	createOrderParameter.Symbol = bm.adaptCurrencyPairToSymbol(currencyPair, contractType)
 	createOrderParameter.OrdType = "Limit"
 	createOrderParameter.TimeInForce = "GoodTillCancel"
-	createOrderParameter.ClOrdID = GenerateOrderClientId(32)
-	createOrderParameter.OrderQty = ToInt(amount)
+	createOrderParameter.ClOrdID = types.GenerateOrderClientId(32)
+	createOrderParameter.OrderQty = types.ToInt(amount)
 
 	if matchPrice == 0 {
-		createOrderParameter.Price = ToFloat64(price)
+		createOrderParameter.Price = types.ToFloat64(price)
 	} else {
 		createOrderParameter.OrdType = "Market"
 	}
@@ -165,8 +163,8 @@ func (bm *bitmex) PlaceFutureOrder2(currencyPair types.CurrencyPair, contractTyp
 	fOrder := &types.FutureOrder{
 		ClientOid:    createOrderParameter.ClOrdID,
 		Currency:     currencyPair,
-		Price:        ToFloat64(price),
-		Amount:       ToFloat64(amount),
+		Price:        types.ToFloat64(price),
+		Amount:       types.ToFloat64(amount),
 		OType:        openType,
 		LeverRate:    leverRate,
 		ContractName: contractType,
@@ -333,9 +331,9 @@ func (bm *bitmex) GetFutureDepth(currencyPair types.CurrencyPair, contractType s
 		rr := r.(map[string]interface{})
 		switch strings.ToLower(rr["side"].(string)) {
 		case "sell":
-			dep.AskList = append(dep.AskList, types.DepthRecord{Price: ToFloat64(rr["price"]), Amount: ToFloat64(rr["size"])})
+			dep.AskList = append(dep.AskList, types.DepthRecord{Price: types.ToFloat64(rr["price"]), Amount: types.ToFloat64(rr["size"])})
 		case "buy":
-			dep.BidList = append(dep.BidList, types.DepthRecord{Price: ToFloat64(rr["price"]), Amount: ToFloat64(rr["size"])})
+			dep.BidList = append(dep.BidList, types.DepthRecord{Price: types.ToFloat64(rr["price"]), Amount: types.ToFloat64(rr["size"])})
 		}
 	}
 
@@ -362,12 +360,12 @@ func (bm *bitmex) GetFutureTicker(currencyPair types.CurrencyPair, contractType 
 
 	return &types.Ticker{
 		Pair: currencyPair,
-		Last: ToFloat64(tickermap["lastPrice"]),
-		High: ToFloat64(tickermap["highPrice"]),
-		Low:  ToFloat64(tickermap["lowPrice"]),
-		Vol:  ToFloat64(tickermap["homeNotional24h"]),
-		Sell: ToFloat64(tickermap["askPrice"]),
-		Buy:  ToFloat64(tickermap["bidPrice"]),
+		Last: types.ToFloat64(tickermap["lastPrice"]),
+		High: types.ToFloat64(tickermap["highPrice"]),
+		Low:  types.ToFloat64(tickermap["lowPrice"]),
+		Vol:  types.ToFloat64(tickermap["homeNotional24h"]),
+		Sell: types.ToFloat64(tickermap["askPrice"]),
+		Buy:  types.ToFloat64(tickermap["bidPrice"]),
 		Date: uint64(date.Unix()),
 	}, nil
 }
@@ -391,7 +389,7 @@ func (bm *bitmex) GetIndicativeFundingRate(symbol string) (float64, *time.Time, 
 
 	t, _ := time.Parse(time.RFC3339, retmap["fundingTimestamp"].(string))
 
-	return ToFloat64(retmap["indicativeFundingRate"]), &t, nil
+	return types.ToFloat64(retmap["indicativeFundingRate"]), &t, nil
 }
 
 func (bm *bitmex) GetExchangeName() string {
@@ -451,11 +449,11 @@ func (bm *bitmex) GetKlineRecords(contract_type string, currency types.CurrencyP
 			Kline: &types.Kline{
 				Timestamp: t.Unix(),
 				Pair:      currency,
-				Open:      ToFloat64(r["open"]),
-				High:      ToFloat64(r["high"]),
-				Low:       ToFloat64(r["low"]),
-				Close:     ToFloat64(r["close"]),
-				Vol:       ToFloat64(r["volume"])}})
+				Open:      types.ToFloat64(r["open"]),
+				High:      types.ToFloat64(r["high"]),
+				Low:       types.ToFloat64(r["low"]),
+				Close:     types.ToFloat64(r["close"]),
+				Vol:       types.ToFloat64(r["volume"])}})
 	}
 
 	return klines, nil
@@ -485,10 +483,10 @@ func (bm *bitmex) GetTrades(contract_type string, currency types.CurrencyPair, s
 		}
 		timestamp, _ := time.Parse(time.RFC3339, fmt.Sprintf("%v", vv["timestamp"]))
 		trades = append(trades, types.Trade{
-			Tid:    ToInt64(vv["trdMatchID"]),
+			Tid:    types.ToInt64(vv["trdMatchID"]),
 			Type:   side,
-			Amount: ToFloat64(vv["size"]),
-			Price:  ToFloat64(vv["price"]),
+			Amount: types.ToFloat64(vv["size"]),
+			Price:  types.ToFloat64(vv["price"]),
 			Date:   timestamp.Unix(),
 			Pair:   currency,
 		})

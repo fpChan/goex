@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	. "github.com/fpChan/goex"
 	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/types"
 	"net/url"
@@ -70,7 +69,7 @@ func (bs *BinanceSwap) setTimeOffset() error {
 		return err
 	}
 
-	stime := int64(ToInt(respmap["serverTime"]))
+	stime := int64(types.ToInt(respmap["serverTime"]))
 	st := time.Unix(stime/1000, 1000000*(stime%1000))
 	lt := time.Now()
 	offset := st.Sub(lt).Nanoseconds()
@@ -119,9 +118,9 @@ func (bs *BinanceSwap) GetFutureTicker(currency types.CurrencyPair, contractType
 	var ticker types.Ticker
 	ticker.Pair = currency
 	ticker.Date = uint64(time.Now().UnixNano() / int64(time.Millisecond))
-	ticker.Last = ToFloat64(tickerPriceMap["price"])
-	ticker.Buy = ToFloat64(tickerBookeMap["bidPrice"])
-	ticker.Sell = ToFloat64(tickerBookeMap["askPrice"])
+	ticker.Last = types.ToFloat64(tickerPriceMap["price"])
+	ticker.Buy = types.ToFloat64(tickerBookeMap["bidPrice"])
+	ticker.Sell = types.ToFloat64(tickerBookeMap["askPrice"])
 	return &ticker, nil
 }
 
@@ -170,8 +169,8 @@ func (bs *BinanceSwap) GetFutureDepth(currency types.CurrencyPair, contractType 
 	n := 0
 	for _, bid := range bids {
 		_bid := bid.([]interface{})
-		amount := ToFloat64(_bid[1])
-		price := ToFloat64(_bid[0])
+		amount := types.ToFloat64(_bid[1])
+		price := types.ToFloat64(_bid[0])
 		dr := types.DepthRecord{Amount: amount, Price: price}
 		depth.BidList = append(depth.BidList, dr)
 		n++
@@ -183,8 +182,8 @@ func (bs *BinanceSwap) GetFutureDepth(currency types.CurrencyPair, contractType 
 	n = 0
 	for _, ask := range asks {
 		_ask := ask.([]interface{})
-		amount := ToFloat64(_ask[1])
-		price := ToFloat64(_ask[0])
+		amount := types.ToFloat64(_ask[1])
+		price := types.ToFloat64(_ask[0])
 		dr := types.DepthRecord{Amount: amount, Price: price}
 		depth.AskList = append(depth.AskList, dr)
 		n++
@@ -230,11 +229,11 @@ func (bs *BinanceSwap) GetTrades(contractType string, currencyPair types.Currenc
 			ty = types.BUY
 		}
 		trades = append(trades, types.Trade{
-			Tid:    ToInt64(m["id"]),
+			Tid:    types.ToInt64(m["id"]),
 			Type:   ty,
-			Amount: ToFloat64(m["qty"]),
-			Price:  ToFloat64(m["price"]),
-			Date:   ToInt64(m["time"]),
+			Amount: types.ToFloat64(m["qty"]),
+			Price:  types.ToFloat64(m["price"]),
+			Date:   types.ToInt64(m["time"]),
 			Pair:   currencyPair,
 		})
 	}
@@ -249,7 +248,7 @@ func (bs *BinanceSwap) GetFutureIndex(currencyPair types.CurrencyPair) (float64,
 		return 0.0, err
 	}
 
-	return ToFloat64(respmap["markPrice"]), nil
+	return types.ToFloat64(respmap["markPrice"]), nil
 }
 
 func (bs *BinanceSwap) GetFutureUserinfo(currencyPair ...types.CurrencyPair) (*types.FutureAccount, error) {
@@ -276,9 +275,9 @@ func (bs *BinanceSwap) GetFutureUserinfo(currencyPair ...types.CurrencyPair) (*t
 		currency := types.NewCurrency(vv["asset"].(string), "").AdaptBccToBch()
 		acc.FutureSubAccounts[currency] = types.FutureSubAccount{
 			Currency:      currency,
-			AccountRights: ToFloat64(vv["marginBalance"]),
-			KeepDeposit:   ToFloat64(vv["maintMargin"]),
-			ProfitUnreal:  ToFloat64(vv["unrealizedProfit"]),
+			AccountRights: types.ToFloat64(vv["marginBalance"]),
+			KeepDeposit:   types.ToFloat64(vv["maintMargin"]),
+			ProfitUnreal:  types.ToFloat64(vv["unrealizedProfit"]),
 		}
 	}
 
@@ -307,7 +306,7 @@ func (bs *BinanceSwap) Transfer(currency types.Currency, transferType int, amoun
 		return 0, err
 	}
 
-	return ToInt64(respmap["tranId"]), nil
+	return types.ToInt64(respmap["tranId"]), nil
 }
 
 func (bs *BinanceSwap) PlaceFutureOrder(currencyPair types.CurrencyPair, contractType, price, amount string, openType, matchPrice int, leverRate float64) (string, error) {
@@ -320,8 +319,8 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair types.CurrencyPair, contra
 		orderId, err := bs.f.PlaceFutureOrder(currencyPair.AdaptUsdtToUsd(), contractType, price, amount, openType, matchPrice, leverRate)
 		return &types.FutureOrder{
 			OrderID2:     orderId,
-			Price:        ToFloat64(price),
-			Amount:       ToFloat64(amount),
+			Price:        types.ToFloat64(price),
+			Amount:       types.ToFloat64(amount),
 			Status:       types.ORDER_UNFINISH,
 			Currency:     currencyPair,
 			OType:        openType,
@@ -336,9 +335,9 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair types.CurrencyPair, contra
 
 	fOrder := &types.FutureOrder{
 		Currency:     currencyPair,
-		ClientOid:    GenerateOrderClientId(32),
-		Price:        ToFloat64(price),
-		Amount:       ToFloat64(amount),
+		ClientOid:    types.GenerateOrderClientId(32),
+		Price:        types.ToFloat64(price),
+		Amount:       types.ToFloat64(amount),
 		OrderType:    openType,
 		LeverRate:    leverRate,
 		ContractName: contractType,
@@ -378,7 +377,7 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair types.CurrencyPair, contra
 		return fOrder, err
 	}
 
-	orderId := ToInt(respmap["orderId"])
+	orderId := types.ToInt(respmap["orderId"])
 	if orderId <= 0 {
 		return fOrder, errors.New(string(resp))
 	}
@@ -424,7 +423,7 @@ func (bs *BinanceSwap) FutureCancelOrder(currencyPair types.CurrencyPair, contra
 		return false, err
 	}
 
-	orderIdCanceled := ToInt(respmap["orderId"])
+	orderIdCanceled := types.ToInt(respmap["orderId"])
 	if orderIdCanceled <= 0 {
 		return false, errors.New(string(resp))
 	}
@@ -464,7 +463,7 @@ func (bs *BinanceSwap) FutureCancelAllOrders(currencyPair types.CurrencyPair, co
 		return false, err
 	}
 
-	if ToInt(respmap["code"]) != 200 {
+	if types.ToInt(respmap["code"]) != 200 {
 		return false, errors.New(respmap["msg"].(string))
 	}
 
@@ -502,7 +501,7 @@ func (bs *BinanceSwap) FutureCancelOrders(currencyPair types.CurrencyPair, contr
 		return false, err
 	}
 
-	if ToInt(respmap["code"]) != 200 {
+	if types.ToInt(respmap["code"]) != 200 {
 		return false, errors.New(respmap["msg"].(string))
 	}
 
@@ -538,13 +537,13 @@ func (bs *BinanceSwap) GetFuturePosition(currencyPair types.CurrencyPair, contra
 			continue
 		}
 		p := types.FuturePosition{
-			LeverRate:      ToFloat64(cont["leverage"]),
+			LeverRate:      types.ToFloat64(cont["leverage"]),
 			Symbol:         currencyPair,
-			ForceLiquPrice: ToFloat64(cont["liquidationPrice"]),
+			ForceLiquPrice: types.ToFloat64(cont["liquidationPrice"]),
 		}
-		amount := ToFloat64(cont["positionAmt"])
-		price := ToFloat64(cont["entryPrice"])
-		upnl := ToFloat64(cont["unRealizedProfit"])
+		amount := types.ToFloat64(cont["positionAmt"])
+		price := types.ToFloat64(cont["entryPrice"])
+		upnl := types.ToFloat64(cont["unRealizedProfit"])
 		if amount > 0 {
 			p.BuyAmount = amount
 			p.BuyPriceAvg = price
@@ -592,7 +591,7 @@ func (bs *BinanceSwap) GetFutureOrders(orderIds []string, currencyPair types.Cur
 		if _ord["symbol"].(string) != currencyPair1.ToSymbol("") {
 			continue
 		}
-		orderId := ToInt(_ord["orderId"])
+		orderId := types.ToInt(_ord["orderId"])
 		ordId := strconv.Itoa(orderId)
 
 		for _, id := range orderIds {
@@ -642,7 +641,7 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair types.Currenc
 			continue
 		}
 
-		if ToInt(_ord["orderId"]) != ordId {
+		if types.ToInt(_ord["orderId"]) != ordId {
 			continue
 		}
 
@@ -655,15 +654,15 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair types.Currenc
 
 func (bs *BinanceSwap) parseOrder(rsp map[string]interface{}) *types.FutureOrder {
 	order := &types.FutureOrder{}
-	order.Price = ToFloat64(rsp["price"])
-	order.Amount = ToFloat64(rsp["origQty"])
-	order.DealAmount = ToFloat64(rsp["executedQty"])
-	order.AvgPrice = ToFloat64(rsp["avgPrice"])
-	order.OrderTime = ToInt64(rsp["time"])
+	order.Price = types.ToFloat64(rsp["price"])
+	order.Amount = types.ToFloat64(rsp["origQty"])
+	order.DealAmount = types.ToFloat64(rsp["executedQty"])
+	order.AvgPrice = types.ToFloat64(rsp["avgPrice"])
+	order.OrderTime = types.ToInt64(rsp["time"])
 
 	status := rsp["status"].(string)
 	order.Status = bs.parseOrderStatus(status)
-	order.OrderID = ToInt64(rsp["orderId"])
+	order.OrderID = types.ToInt64(rsp["orderId"])
 	order.OrderID2 = strconv.Itoa(int(order.OrderID))
 	order.OType = types.OPEN_BUY
 	if rsp["side"].(string) == "SELL" {
@@ -775,7 +774,7 @@ func (bs *BinanceSwap) GetKlineRecords(contractType string, currency types.Curre
 	params.Set("interval", _INERNAL_KLINE_PERIOD_CONVERTER[types.KlinePeriod(period)])
 	//params.Set("endTime", strconv.Itoa(int(time.Now().UnixNano()/1000000)))
 	params.Set("limit", strconv.Itoa(size))
-	MergeOptionalParameter(&params, opt...)
+	types.MergeOptionalParameter(&params, opt...)
 
 	klineUrl := bs.apiV1 + KLINE_URI + "?" + params.Encode()
 	klines, err := api.HttpGet3(bs.httpClient, klineUrl, nil)
@@ -788,11 +787,11 @@ func (bs *BinanceSwap) GetKlineRecords(contractType string, currency types.Curre
 		r := types.Kline{Pair: currency}
 		record := _record.([]interface{})
 		r.Timestamp = int64(record[0].(float64)) / 1000 //to unix timestramp
-		r.Open = ToFloat64(record[1])
-		r.High = ToFloat64(record[2])
-		r.Low = ToFloat64(record[3])
-		r.Close = ToFloat64(record[4])
-		r.Vol = ToFloat64(record[5])
+		r.Open = types.ToFloat64(record[1])
+		r.High = types.ToFloat64(record[2])
+		r.Low = types.ToFloat64(record[3])
+		r.Close = types.ToFloat64(record[4])
+		r.Vol = types.ToFloat64(record[5])
 
 		klineRecords = append(klineRecords, types.FutureKline{Kline: &r})
 	}
@@ -806,7 +805,7 @@ func (bs *BinanceSwap) GetServerTime() (int64, error) {
 		return 0, err
 	}
 
-	stime := int64(ToInt(respmap["serverTime"]))
+	stime := int64(types.ToInt(respmap["serverTime"]))
 
 	return stime, nil
 }

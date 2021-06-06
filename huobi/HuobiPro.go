@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/fpChan/goex"
 	. "github.com/fpChan/goex/internal/logger"
 )
 
@@ -210,7 +209,7 @@ func (hbpro *HuoBiPro) GetAccount() (*types.Account, error) {
 		currencySymbol := balancemap["currency"].(string)
 		currency := types.NewCurrency(currencySymbol, "")
 		typeStr := balancemap["type"].(string)
-		balance := ToFloat64(balancemap["balance"])
+		balance := types.ToFloat64(balancemap["balance"])
 		if subAccMap[currency] == nil {
 			subAccMap[currency] = new(types.SubAccount)
 		}
@@ -236,14 +235,14 @@ func (hbpro *HuoBiPro) placeOrder(amount, price string, pair types.CurrencyPair,
 	path := "/v1/order/orders/place"
 	params := url.Values{}
 	params.Set("account-id", hbpro.accountId)
-	params.Set("client-order-id", GenerateOrderClientId(32))
-	params.Set("amount", FloatToString(ToFloat64(amount), int(symbol.AmountPrecision)))
+	params.Set("client-order-id", types.GenerateOrderClientId(32))
+	params.Set("amount", types.FloatToString(types.ToFloat64(amount), int(symbol.AmountPrecision)))
 	params.Set("symbol", pair.AdaptUsdToUsdt().ToLower().ToSymbol(""))
 	params.Set("type", orderType)
 
 	switch orderType {
 	case "buy-limit", "sell-limit":
-		params.Set("price", FloatToString(ToFloat64(price), int(symbol.PricePrecision)))
+		params.Set("price", types.FloatToString(types.ToFloat64(price), int(symbol.PricePrecision)))
 	}
 
 	hbpro.buildPostForm("POST", path, &params)
@@ -287,10 +286,10 @@ func (hbpro *HuoBiPro) LimitBuy(amount, price string, currency types.CurrencyPai
 	}
 	return &types.Order{
 		Currency: currency,
-		OrderID:  ToInt(orderId),
+		OrderID:  types.ToInt(orderId),
 		OrderID2: orderId,
-		Amount:   ToFloat64(amount),
-		Price:    ToFloat64(price),
+		Amount:   types.ToFloat64(amount),
+		Price:    types.ToFloat64(price),
 		Side:     types.BUY}, nil
 }
 
@@ -314,10 +313,10 @@ func (hbpro *HuoBiPro) LimitSell(amount, price string, currency types.CurrencyPa
 	}
 	return &types.Order{
 		Currency: currency,
-		OrderID:  ToInt(orderId),
+		OrderID:  types.ToInt(orderId),
 		OrderID2: orderId,
-		Amount:   ToFloat64(amount),
-		Price:    ToFloat64(price),
+		Amount:   types.ToFloat64(amount),
+		Price:    types.ToFloat64(price),
 		Side:     types.SELL}, nil
 }
 
@@ -328,10 +327,10 @@ func (hbpro *HuoBiPro) MarketBuy(amount, price string, currency types.CurrencyPa
 	}
 	return &types.Order{
 		Currency: currency,
-		OrderID:  ToInt(orderId),
+		OrderID:  types.ToInt(orderId),
 		OrderID2: orderId,
-		Amount:   ToFloat64(amount),
-		Price:    ToFloat64(price),
+		Amount:   types.ToFloat64(amount),
+		Price:    types.ToFloat64(price),
 		Side:     types.BUY_MARKET}, nil
 }
 
@@ -342,23 +341,23 @@ func (hbpro *HuoBiPro) MarketSell(amount, price string, currency types.CurrencyP
 	}
 	return &types.Order{
 		Currency: currency,
-		OrderID:  ToInt(orderId),
+		OrderID:  types.ToInt(orderId),
 		OrderID2: orderId,
-		Amount:   ToFloat64(amount),
-		Price:    ToFloat64(price),
+		Amount:   types.ToFloat64(amount),
+		Price:    types.ToFloat64(price),
 		Side:     types.SELL_MARKET}, nil
 }
 
 func (hbpro *HuoBiPro) parseOrder(ordmap map[string]interface{}) types.Order {
 	ord := types.Order{
 		Cid:        fmt.Sprint(ordmap["client-order-id"]),
-		OrderID:    ToInt(ordmap["id"]),
-		OrderID2:   fmt.Sprint(ToInt(ordmap["id"])),
-		Amount:     ToFloat64(ordmap["amount"]),
-		Price:      ToFloat64(ordmap["price"]),
-		DealAmount: ToFloat64(ordmap["field-amount"]),
-		Fee:        ToFloat64(ordmap["field-fees"]),
-		OrderTime:  ToInt(ordmap["created-at"]),
+		OrderID:    types.ToInt(ordmap["id"]),
+		OrderID2:   fmt.Sprint(types.ToInt(ordmap["id"])),
+		Amount:     types.ToFloat64(ordmap["amount"]),
+		Price:      types.ToFloat64(ordmap["price"]),
+		DealAmount: types.ToFloat64(ordmap["field-amount"]),
+		Fee:        types.ToFloat64(ordmap["field-fees"]),
+		OrderTime:  types.ToInt(ordmap["created-at"]),
 	}
 
 	state := ordmap["state"].(string)
@@ -376,7 +375,7 @@ func (hbpro *HuoBiPro) parseOrder(ordmap map[string]interface{}) types.Order {
 	}
 
 	if ord.DealAmount > 0.0 {
-		ord.AvgPrice = ToFloat64(ordmap["field-cash-amount"]) / ord.DealAmount
+		ord.AvgPrice = types.ToFloat64(ordmap["field-cash-amount"]) / ord.DealAmount
 	}
 
 	typeS := ordmap["type"].(string)
@@ -467,7 +466,7 @@ func (hbpro *HuoBiPro) getOrders(pair types.CurrencyPair, optional ...types.Opti
 	path := "/v1/order/orders"
 	params := url.Values{}
 	params.Set("symbol", strings.ToLower(pair.AdaptUsdToUsdt().ToSymbol("")))
-	MergeOptionalParameter(&params, optional...)
+	types.MergeOptionalParameter(&params, optional...)
 	Log.Info(params)
 	hbpro.buildPostForm("GET", path, &params)
 	respmap, err := api.HttpGet(hbpro.httpClient, fmt.Sprintf("%s%s?%s", hbpro.baseUrl, path, params.Encode()))
@@ -510,9 +509,9 @@ func (hbpro *HuoBiPro) GetTicker(currencyPair types.CurrencyPair) (*types.Ticker
 
 	ticker := new(types.Ticker)
 	ticker.Pair = currencyPair
-	ticker.Vol = ToFloat64(tickmap["amount"])
-	ticker.Low = ToFloat64(tickmap["low"])
-	ticker.High = ToFloat64(tickmap["high"])
+	ticker.Vol = types.ToFloat64(tickmap["amount"])
+	ticker.Low = types.ToFloat64(tickmap["low"])
+	ticker.High = types.ToFloat64(tickmap["high"])
 	bid, isOk := tickmap["bid"].([]interface{})
 	if isOk != true {
 		return nil, errors.New("no bid")
@@ -521,10 +520,10 @@ func (hbpro *HuoBiPro) GetTicker(currencyPair types.CurrencyPair) (*types.Ticker
 	if isOk != true {
 		return nil, errors.New("no ask")
 	}
-	ticker.Buy = ToFloat64(bid[0])
-	ticker.Sell = ToFloat64(ask[0])
-	ticker.Last = ToFloat64(tickmap["close"])
-	ticker.Date = ToUint64(respmap["ts"])
+	ticker.Buy = types.ToFloat64(bid[0])
+	ticker.Sell = types.ToFloat64(ask[0])
+	ticker.Last = types.ToFloat64(tickmap["close"])
+	ticker.Date = types.ToUint64(respmap["ts"])
 
 	return ticker, nil
 }
@@ -555,7 +554,7 @@ func (hbpro *HuoBiPro) GetDepth(size int, currency types.CurrencyPair) (*types.D
 
 	dep := hbpro.parseDepthData(tick, size)
 	dep.Pair = currency
-	mills := ToUint64(tick["ts"])
+	mills := types.ToUint64(tick["ts"])
 	dep.UTime = time.Unix(int64(mills/1000), int64(mills%1000)*int64(time.Millisecond))
 
 	return dep, nil
@@ -585,12 +584,12 @@ func (hbpro *HuoBiPro) GetKlineRecords(currency types.CurrencyPair, period types
 		item := e.(map[string]interface{})
 		klines = append(klines, types.Kline{
 			Pair:      currency,
-			Open:      ToFloat64(item["open"]),
-			Close:     ToFloat64(item["close"]),
-			High:      ToFloat64(item["high"]),
-			Low:       ToFloat64(item["low"]),
-			Vol:       ToFloat64(item["amount"]),
-			Timestamp: int64(ToUint64(item["id"]))})
+			Open:      types.ToFloat64(item["open"]),
+			Close:     types.ToFloat64(item["close"]),
+			High:      types.ToFloat64(item["high"]),
+			Low:       types.ToFloat64(item["low"]),
+			Vol:       types.ToFloat64(item["amount"]),
+			Timestamp: int64(types.ToUint64(item["id"]))})
 	}
 
 	return klines, nil
@@ -631,14 +630,14 @@ func (hbpro *HuoBiPro) GetTrades(currencyPair types.CurrencyPair, since int64) (
 			//fix huobi   Weird rules of tid
 			//火币交易ID规定固定23位, 导致超出int64范围，每个交易对有不同的固定填充前缀
 			//实际交易ID远远没有到23位数字。
-			tid := ToInt64(strings.TrimPrefix(t.Id.String()[4:], "0"))
+			tid := types.ToInt64(strings.TrimPrefix(t.Id.String()[4:], "0"))
 			if tid == 0 {
-				tid = ToInt64(strings.TrimPrefix(t.Id.String()[5:], "0"))
+				tid = types.ToInt64(strings.TrimPrefix(t.Id.String()[5:], "0"))
 			}
 			///
 
 			trades = append(trades, types.Trade{
-				Tid:    ToInt64(tid),
+				Tid:    types.ToInt64(tid),
 				Pair:   currencyPair,
 				Amount: t.Amount,
 				Price:  t.Price,
@@ -661,7 +660,7 @@ func (hbpro *HuoBiPro) buildPostForm(reqMethod, path string, postForm *url.Value
 	postForm.Set("Timestamp", time.Now().UTC().Format("2006-01-02T15:04:05"))
 	domain := strings.Replace(hbpro.baseUrl, "https://", "", len(hbpro.baseUrl))
 	payload := fmt.Sprintf("%s\n%s\n%s\n%s", reqMethod, domain, path, postForm.Encode())
-	sign, _ := GetParamHmacSHA256Base64Sign(hbpro.secretKey, payload)
+	sign, _ := types.GetParamHmacSHA256Base64Sign(hbpro.secretKey, payload)
 	postForm.Set("Signature", sign)
 
 	/**
@@ -694,8 +693,8 @@ func (hbpro *HuoBiPro) parseDepthData(tick map[string]interface{}, size int) *ty
 	for _, r := range asks {
 		var dr types.DepthRecord
 		rr := r.([]interface{})
-		dr.Price = ToFloat64(rr[0])
-		dr.Amount = ToFloat64(rr[1])
+		dr.Price = types.ToFloat64(rr[0])
+		dr.Amount = types.ToFloat64(rr[1])
 		depth.AskList = append(depth.AskList, dr)
 		n++
 		if n == size {
@@ -707,8 +706,8 @@ func (hbpro *HuoBiPro) parseDepthData(tick map[string]interface{}, size int) *ty
 	for _, r := range bids {
 		var dr types.DepthRecord
 		rr := r.([]interface{})
-		dr.Price = ToFloat64(rr[0])
-		dr.Amount = ToFloat64(rr[1])
+		dr.Price = types.ToFloat64(rr[0])
+		dr.Amount = types.ToFloat64(rr[1])
 		depth.BidList = append(depth.BidList, dr)
 		n++
 		if n == size {

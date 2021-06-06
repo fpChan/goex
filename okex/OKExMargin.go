@@ -3,7 +3,6 @@ package okex
 import (
 	"errors"
 	"fmt"
-	. "github.com/fpChan/goex"
 	"github.com/fpChan/goex/types"
 	"strings"
 )
@@ -23,9 +22,9 @@ func (ok *OKExMargin) GetMarginAccount(pair types.CurrencyPair) (*types.MarginAc
 	acc := types.MarginAccount{}
 	acc.Sub = make(map[types.Currency]types.MarginSubAccount, 2)
 
-	acc.LiquidationPrice = ToFloat64(response["liquidation_price"])
-	acc.RiskRate = ToFloat64(response["risk_rate"])
-	acc.MarginRatio = ToFloat64(response["margin_ratio"])
+	acc.LiquidationPrice = types.ToFloat64(response["liquidation_price"])
+	acc.RiskRate = types.ToFloat64(response["risk_rate"])
+	acc.MarginRatio = types.ToFloat64(response["margin_ratio"])
 
 	for k, v := range response {
 		if strings.Contains(k, "currency") {
@@ -36,12 +35,12 @@ func (ok *OKExMargin) GetMarginAccount(pair types.CurrencyPair) (*types.MarginAc
 			}
 
 			acc.Sub[c] = types.MarginSubAccount{
-				Balance:     ToFloat64(vv["balance"]),
-				Frozen:      ToFloat64(vv["frozen"]),
-				Available:   ToFloat64(vv["available"]),
-				CanWithdraw: ToFloat64(vv["can_withdraw"]),
-				Loan:        ToFloat64(vv["borrowed"]),
-				LendingFee:  ToFloat64(vv["lending_fee"])}
+				Balance:     types.ToFloat64(vv["balance"]),
+				Frozen:      types.ToFloat64(vv["frozen"]),
+				Available:   types.ToFloat64(vv["available"]),
+				CanWithdraw: types.ToFloat64(vv["can_withdraw"]),
+				Loan:        types.ToFloat64(vv["borrowed"]),
+				LendingFee:  types.ToFloat64(vv["lending_fee"])}
 		}
 	}
 
@@ -62,7 +61,7 @@ func (ok *OKExMargin) Borrow(parameter types.BorrowParameter) (borrowId string, 
 	}{
 		InstrumentId: parameter.CurrencyPair.ToSymbol("-"),
 		Currency:     parameter.Currency.Symbol,
-		Amount:       FloatToString(parameter.Amount, 8)}
+		Amount:       types.FloatToString(parameter.Amount, 8)}
 
 	reqBody, _, _ := ok.BuildRequestBody(param)
 	println(reqBody)
@@ -96,7 +95,7 @@ func (ok *OKExMargin) Repayment(parameter types.RepaymentParameter) (repaymentId
 		parameter.BorrowId,
 		parameter.CurrencyPair.ToSymbol("-"),
 		parameter.Currency.Symbol,
-		FloatToString(parameter.Amount, 8)}
+		types.FloatToString(parameter.Amount, 8)}
 
 	reqBody, _, _ := ok.BuildRequestBody(param)
 	println(reqBody)

@@ -3,7 +3,6 @@ package binance
 import (
 	"encoding/json"
 	"errors"
-	"github.com/fpChan/goex"
 	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/internal/logger"
 	"github.com/fpChan/goex/types"
@@ -145,7 +144,7 @@ func (s *FuturesWs) handle(data []byte) error {
 			dep.Pair = adaptSymbolToCurrencyPair(dep.ContractType) //usdt swap
 		}
 
-		dep.UTime = time.Unix(0, goex.ToInt64(m["T"])*int64(time.Millisecond))
+		dep.UTime = time.Unix(0, types.ToInt64(m["T"])*int64(time.Millisecond))
 		s.depthCallFn(dep)
 
 		return nil
@@ -168,16 +167,16 @@ func (s *FuturesWs) depthHandle(bids []interface{}, asks []interface{}) *types.D
 		bid := item.([]interface{})
 		dep.BidList = append(dep.BidList,
 			types.DepthRecord{
-				Price:  goex.ToFloat64(bid[0]),
-				Amount: goex.ToFloat64(bid[1]),
+				Price:  types.ToFloat64(bid[0]),
+				Amount: types.ToFloat64(bid[1]),
 			})
 	}
 
 	for _, item := range asks {
 		ask := item.([]interface{})
 		dep.AskList = append(dep.AskList, types.DepthRecord{
-			Price:  goex.ToFloat64(ask[0]),
-			Amount: goex.ToFloat64(ask[1]),
+			Price:  types.ToFloat64(ask[0]),
+			Amount: types.ToFloat64(ask[1]),
 		})
 	}
 
@@ -198,11 +197,11 @@ func (s *FuturesWs) tickerHandle(m map[string]interface{}) *types.FutureTicker {
 	}
 
 	ticker.ContractType = m["s"].(string)
-	ticker.Date = goex.ToUint64(m["E"])
-	ticker.High = goex.ToFloat64(m["h"])
-	ticker.Low = goex.ToFloat64(m["l"])
-	ticker.Last = goex.ToFloat64(m["c"])
-	ticker.Vol = goex.ToFloat64(m["v"])
+	ticker.Date = types.ToUint64(m["E"])
+	ticker.High = types.ToFloat64(m["h"])
+	ticker.Low = types.ToFloat64(m["l"])
+	ticker.Last = types.ToFloat64(m["c"])
+	ticker.Vol = types.ToFloat64(m["v"])
 
 	return &ticker
 }

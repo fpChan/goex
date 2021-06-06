@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	. "github.com/fpChan/goex"
 	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/common/exchange"
 	"github.com/fpChan/goex/internal/logger"
@@ -77,7 +76,7 @@ func NewHbdmWs() *HbdmWs {
 		AutoReconnect().
 		//Heartbeat([]byte("{\"event\": \"ping\"} "), 30*time.Second).
 		//Heartbeat(func() []byte { return []byte("{\"op\":\"ping\"}") }(), 5*time.Second).
-		DecompressFunc(GzipDecompress).
+		DecompressFunc(types.GzipDecompress).
 		ProtoHandleFunc(hbdmWs.handle)
 	go hbdmInit()
 	return hbdmWs

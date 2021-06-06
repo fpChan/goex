@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	. "github.com/fpChan/goex"
 	"github.com/fpChan/goex/internal/logger"
 	"github.com/fpChan/goex/types"
 	"sort"
@@ -233,14 +232,14 @@ func (okV3Ws *OKExV3SwapWs) handle(channel string, data json.RawMessage) error {
 			okV3Ws.klineCallback(&types.FutureKline{
 				Kline: &types.Kline{
 					Pair:      pair,
-					High:      ToFloat64(t.Candle[2]),
-					Low:       ToFloat64(t.Candle[3]),
+					High:      types.ToFloat64(t.Candle[2]),
+					Low:       types.ToFloat64(t.Candle[3]),
 					Timestamp: ts.Unix(),
-					Open:      ToFloat64(t.Candle[1]),
-					Close:     ToFloat64(t.Candle[4]),
-					Vol:       ToFloat64(t.Candle[5]),
+					Open:      types.ToFloat64(t.Candle[1]),
+					Close:     types.ToFloat64(t.Candle[4]),
+					Vol:       types.ToFloat64(t.Candle[5]),
 				},
-				Vol2: ToFloat64(t.Candle[6]),
+				Vol2: types.ToFloat64(t.Candle[6]),
 			}, 1)
 		}
 		return nil
@@ -260,13 +259,13 @@ func (okV3Ws *OKExV3SwapWs) handle(channel string, data json.RawMessage) error {
 		dep.UTime, _ = time.Parse(time.RFC3339, depthResp[0].Timestamp)
 		for _, itm := range depthResp[0].Asks {
 			dep.AskList = append(dep.AskList, types.DepthRecord{
-				Price:  ToFloat64(itm[0]),
-				Amount: ToFloat64(itm[1])})
+				Price:  types.ToFloat64(itm[0]),
+				Amount: types.ToFloat64(itm[1])})
 		}
 		for _, itm := range depthResp[0].Bids {
 			dep.BidList = append(dep.BidList, types.DepthRecord{
-				Price:  ToFloat64(itm[0]),
-				Amount: ToFloat64(itm[1])})
+				Price:  types.ToFloat64(itm[0]),
+				Amount: types.ToFloat64(itm[1])})
 		}
 		sort.Sort(sort.Reverse(dep.AskList))
 		//call back func

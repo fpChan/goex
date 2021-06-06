@@ -3,7 +3,6 @@ package binance
 import (
 	json2 "encoding/json"
 	"fmt"
-	"github.com/fpChan/goex"
 	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/internal/logger"
 	"github.com/fpChan/goex/types"
@@ -148,15 +147,15 @@ func (s *SpotWs) depthHandle(data json2.RawMessage, pair types.CurrencyPair) err
 
 	for _, bid := range depthR.Bids {
 		dep.BidList = append(dep.BidList, types.DepthRecord{
-			Price:  goex.ToFloat64(bid[0]),
-			Amount: goex.ToFloat64(bid[1]),
+			Price:  types.ToFloat64(bid[0]),
+			Amount: types.ToFloat64(bid[1]),
 		})
 	}
 
 	for _, ask := range depthR.Asks {
 		dep.AskList = append(dep.AskList, types.DepthRecord{
-			Price:  goex.ToFloat64(ask[0]),
-			Amount: goex.ToFloat64(ask[1]),
+			Price:  types.ToFloat64(ask[0]),
+			Amount: types.ToFloat64(ask[1]),
 		})
 	}
 
@@ -180,13 +179,13 @@ func (s *SpotWs) tickerHandle(data json2.RawMessage, pair types.CurrencyPair) er
 	}
 
 	ticker.Pair = pair
-	ticker.Vol = goex.ToFloat64(tickerData["v"])
-	ticker.Last = goex.ToFloat64(tickerData["c"])
-	ticker.Sell = goex.ToFloat64(tickerData["a"])
-	ticker.Buy = goex.ToFloat64(tickerData["b"])
-	ticker.High = goex.ToFloat64(tickerData["h"])
-	ticker.Low = goex.ToFloat64(tickerData["l"])
-	ticker.Date = goex.ToUint64(tickerData["E"])
+	ticker.Vol = types.ToFloat64(tickerData["v"])
+	ticker.Last = types.ToFloat64(tickerData["c"])
+	ticker.Sell = types.ToFloat64(tickerData["a"])
+	ticker.Buy = types.ToFloat64(tickerData["b"])
+	ticker.High = types.ToFloat64(tickerData["h"])
+	ticker.Low = types.ToFloat64(tickerData["l"])
+	ticker.Date = types.ToUint64(tickerData["E"])
 
 	s.tickerCallFn(&ticker)
 

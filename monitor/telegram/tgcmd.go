@@ -43,7 +43,7 @@ func main() {
 		ApiPassphrase: "",
 	})
 	var symbols = []types.CurrencyPair{types.SHIB_USDT, types.SUSHI_USDT, types.UNI_USDT, types.LINCH_USDT, types.KSM_USDT, types.MATIC_USDT, types.THETA_USDT, types.BTC_USDT, types.ETH_USD}
-	monitorTool = monitor.NewTelegramMonitor(okEx.OKExFuture, tgURL, tgChatID, proxyScheme, proxyHost, symbols)
+	monitorTool = NewTelegramMonitor(okEx.OKExFuture, tgURL, tgChatID, proxyScheme, proxyHost, symbols)
 	if err := monitorTool.Start(); err != nil {
 		return
 	}

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	. "github.com/fpChan/goex"
 	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/internal/logger"
 	"github.com/fpChan/goex/types"
@@ -162,13 +161,13 @@ func (bs *BinanceFutures) GetFutureTicker(currencyPair types.CurrencyPair, contr
 
 	var ticker types.Ticker
 	ticker.Pair = currencyPair
-	ticker.Date = ToUint64(tickerBookMap["time"])
-	ticker.Last = ToFloat64(ticker24HrMap["lastPrice"])
-	ticker.Buy = ToFloat64(tickerBookMap["bidPrice"])
-	ticker.Sell = ToFloat64(tickerBookMap["askPrice"])
-	ticker.High = ToFloat64(ticker24HrMap["highPrice"])
-	ticker.Low = ToFloat64(ticker24HrMap["lowPrice"])
-	ticker.Vol = ToFloat64(ticker24HrMap["volume"])
+	ticker.Date = types.ToUint64(tickerBookMap["time"])
+	ticker.Last = types.ToFloat64(ticker24HrMap["lastPrice"])
+	ticker.Buy = types.ToFloat64(tickerBookMap["bidPrice"])
+	ticker.Sell = types.ToFloat64(tickerBookMap["askPrice"])
+	ticker.High = types.ToFloat64(ticker24HrMap["highPrice"])
+	ticker.Low = types.ToFloat64(ticker24HrMap["lowPrice"])
+	ticker.Vol = types.ToFloat64(ticker24HrMap["volume"])
 
 	return &ticker, nil
 }
@@ -214,16 +213,16 @@ func (bs *BinanceFutures) GetFutureDepth(currencyPair types.CurrencyPair, contra
 	for _, item := range ret["asks"].([]interface{}) {
 		ask := item.([]interface{})
 		dep.AskList = append(dep.AskList, types.DepthRecord{
-			Price:  ToFloat64(ask[0]),
-			Amount: ToFloat64(ask[1]),
+			Price:  types.ToFloat64(ask[0]),
+			Amount: types.ToFloat64(ask[1]),
 		})
 	}
 
 	for _, item := range ret["bids"].([]interface{}) {
 		bid := item.([]interface{})
 		dep.BidList = append(dep.BidList, types.DepthRecord{
-			Price:  ToFloat64(bid[0]),
-			Amount: ToFloat64(bid[1]),
+			Price:  types.ToFloat64(bid[0]),
+			Amount: types.ToFloat64(bid[1]),
 		})
 	}
 
@@ -285,7 +284,7 @@ func (bs *BinanceFutures) PlaceFutureOrder(currencyPair types.CurrencyPair, cont
 
 	param := url.Values{}
 	param.Set("symbol", symbol)
-	param.Set("newClientOrderId", GenerateOrderClientId(32))
+	param.Set("newClientOrderId", types.GenerateOrderClientId(32))
 	param.Set("quantity", amount)
 	param.Set("newOrderRespType", "ACK")
 
@@ -338,8 +337,8 @@ func (bs *BinanceFutures) LimitFuturesOrder(currencyPair types.CurrencyPair, con
 		OrderID2:     orderId,
 		Currency:     currencyPair,
 		ContractName: contractType,
-		Amount:       ToFloat64(amount),
-		Price:        ToFloat64(price),
+		Amount:       types.ToFloat64(amount),
+		Price:        types.ToFloat64(price),
 		OType:        openType,
 	}, err
 }
@@ -350,7 +349,7 @@ func (bs *BinanceFutures) MarketFuturesOrder(currencyPair types.CurrencyPair, co
 		OrderID2:     orderId,
 		Currency:     currencyPair,
 		ContractName: contractType,
-		Amount:       ToFloat64(amount),
+		Amount:       types.ToFloat64(amount),
 		OType:        openType,
 	}, err
 }
