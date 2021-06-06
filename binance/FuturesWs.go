@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/fpChan/goex"
+	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/internal/logger"
+	"github.com/fpChan/goex/types"
 	"net/http"
 	"net/url"
 	"os"
@@ -19,19 +21,19 @@ type FuturesWs struct {
 	fOnce sync.Once
 	dOnce sync.Once
 
-	wsBuilder *goex.WsBuilder
-	f         *goex.WsConn
-	d         *goex.WsConn
+	wsBuilder *api.WsBuilder
+	f         *api.WsConn
+	d         *api.WsConn
 
-	depthCallFn  func(depth *goex.Depth)
-	tickerCallFn func(ticker *goex.FutureTicker)
-	tradeCalFn   func(trade *goex.Trade, contract string)
+	depthCallFn  func(depth *types.Depth)
+	tickerCallFn func(ticker *types.FutureTicker)
+	tradeCalFn   func(trade *types.Trade, contract string)
 }
 
 func NewFuturesWs() *FuturesWs {
 	futuresWs := new(FuturesWs)
 
-	futuresWs.wsBuilder = goex.NewWsBuilder().
+	futuresWs.wsBuilder = api.NewWsBuilder().
 		ProxyUrl(os.Getenv("HTTPS_PROXY")).
 		ProtoHandleFunc(futuresWs.handle).AutoReconnect()
 
@@ -50,7 +52,7 @@ func NewFuturesWs() *FuturesWs {
 		}
 	}
 
-	futuresWs.base = NewBinanceFutures(&goex.APIConfig{
+	futuresWs.base = NewBinanceFutures(&types.APIConfig{
 		HttpClient: httpCli,
 	})
 
@@ -69,21 +71,21 @@ func (s *FuturesWs) connectFutures() {
 	})
 }
 
-func (s *FuturesWs) DepthCallback(f func(depth *goex.Depth)) {
+func (s *FuturesWs) DepthCallback(f func(depth *types.Depth)) {
 	s.depthCallFn = f
 }
 
-func (s *FuturesWs) TickerCallback(f func(ticker *goex.FutureTicker)) {
+func (s *FuturesWs) TickerCallback(f func(ticker *types.FutureTicker)) {
 	s.tickerCallFn = f
 }
 
-func (s *FuturesWs) TradeCallback(f func(trade *goex.Trade, contract string)) {
+func (s *FuturesWs) TradeCallback(f func(trade *types.Trade, contract string)) {
 	s.tradeCalFn = f
 }
 
-func (s *FuturesWs) SubscribeDepth(pair goex.CurrencyPair, contractType string) error {
+func (s *FuturesWs) SubscribeDepth(pair types.CurrencyPair, contractType string) error {
 	switch contractType {
-	case goex.SWAP_USDT_CONTRACT:
+	case types.SWAP_USDT_CONTRACT:
 		return s.f.Subscribe(req{
 			Method: "SUBSCRIBE",
 			Params: []string{pair.AdaptUsdToUsdt().ToLower().ToSymbol("") + "@depth10@100ms"},
@@ -100,9 +102,9 @@ func (s *FuturesWs) SubscribeDepth(pair goex.CurrencyPair, contractType string) 
 	return errors.New("contract is error")
 }
 
-func (s *FuturesWs) SubscribeTicker(pair goex.CurrencyPair, contractType string) error {
+func (s *FuturesWs) SubscribeTicker(pair types.CurrencyPair, contractType string) error {
 	switch contractType {
-	case goex.SWAP_USDT_CONTRACT:
+	case types.SWAP_USDT_CONTRACT:
 		s.connectUsdtFutures()
 		return s.f.Subscribe(req{
 			Method: "SUBSCRIBE",
@@ -121,7 +123,7 @@ func (s *FuturesWs) SubscribeTicker(pair goex.CurrencyPair, contractType string)
 	return errors.New("contract is error")
 }
 
-func (s *FuturesWs) SubscribeTrade(pair goex.CurrencyPair, contractType string) error {
+func (s *FuturesWs) SubscribeTrade(pair types.CurrencyPair, contractType string) error {
 	panic("implement me")
 }
 
@@ -159,13 +161,13 @@ func (s *FuturesWs) handle(data []byte) error {
 	return nil
 }
 
-func (s *FuturesWs) depthHandle(bids []interface{}, asks []interface{}) *goex.Depth {
-	var dep goex.Depth
+func (s *FuturesWs) depthHandle(bids []interface{}, asks []interface{}) *types.Depth {
+	var dep types.Depth
 
 	for _, item := range bids {
 		bid := item.([]interface{})
 		dep.BidList = append(dep.BidList,
-			goex.DepthRecord{
+			types.DepthRecord{
 				Price:  goex.ToFloat64(bid[0]),
 				Amount: goex.ToFloat64(bid[1]),
 			})
@@ -173,7 +175,7 @@ func (s *FuturesWs) depthHandle(bids []interface{}, asks []interface{}) *goex.De
 
 	for _, item := range asks {
 		ask := item.([]interface{})
-		dep.AskList = append(dep.AskList, goex.DepthRecord{
+		dep.AskList = append(dep.AskList, types.DepthRecord{
 			Price:  goex.ToFloat64(ask[0]),
 			Amount: goex.ToFloat64(ask[1]),
 		})
@@ -184,9 +186,9 @@ func (s *FuturesWs) depthHandle(bids []interface{}, asks []interface{}) *goex.De
 	return &dep
 }
 
-func (s *FuturesWs) tickerHandle(m map[string]interface{}) *goex.FutureTicker {
-	var ticker goex.FutureTicker
-	ticker.Ticker = new(goex.Ticker)
+func (s *FuturesWs) tickerHandle(m map[string]interface{}) *types.FutureTicker {
+	var ticker types.FutureTicker
+	ticker.Ticker = new(types.Ticker)
 
 	symbol, ok := m["ps"].(string)
 	if ok {

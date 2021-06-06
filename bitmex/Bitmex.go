@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/fpChan/goex/common/api"
+	"github.com/fpChan/goex/common/exchange"
+	"github.com/fpChan/goex/types"
 	"net/url"
 	"strings"
 	"time"
@@ -18,14 +21,14 @@ const (
 )
 
 type bitmex struct {
-	*APIConfig
+	*types.APIConfig
 }
 
-func (bm *bitmex) GetFutureOrderHistory(pair CurrencyPair, contractType string, optional ...OptionalParameter) ([]FutureOrder, error) {
+func (bm *bitmex) GetFutureOrderHistory(pair types.CurrencyPair, contractType string, optional ...types.OptionalParameter) ([]types.FutureOrder, error) {
 	panic("implement me")
 }
 
-func New(config *APIConfig) *bitmex {
+func New(config *types.APIConfig) *bitmex {
 	bm := &bitmex{config}
 	if bm.Endpoint == "" {
 		bm.Endpoint = baseUrl
@@ -50,7 +53,7 @@ func (bm *bitmex) doAuthRequest(m, uri, param string, r interface{}) error {
 	nonce := time.Now().UTC().Unix() + 3600
 	sign := bm.generateSignature(m, uri, param, fmt.Sprint(nonce))
 
-	resp, err := NewHttpRequest(bm.HttpClient, m, bm.Endpoint+uri, param, map[string]string{
+	resp, err := api.NewHttpRequest(bm.HttpClient, m, bm.Endpoint+uri, param, map[string]string{
 		"User-Agent":    "github.com/fpChan/goex/bitmex",
 		"Content-Type":  "application/json",
 		"Accept":        "application/json",
@@ -72,7 +75,7 @@ func (bm *bitmex) toJson(param interface{}) string {
 	return string(dataJson)
 }
 
-func (bm *bitmex) GetFutureUserinfo(currencyPair ...CurrencyPair) (*FutureAccount, error) {
+func (bm *bitmex) GetFutureUserinfo(currencyPair ...types.CurrencyPair) (*types.FutureAccount, error) {
 	uri := "/api/v1/user/margin?currency=XBt"
 	var resp struct {
 		Currency           string  `json:"currency"`
@@ -94,10 +97,10 @@ func (bm *bitmex) GetFutureUserinfo(currencyPair ...CurrencyPair) (*FutureAccoun
 		return nil, err
 	}
 
-	futureAcc := new(FutureAccount)
-	futureAcc.FutureSubAccounts = make(map[Currency]FutureSubAccount, 1)
-	futureAcc.FutureSubAccounts[BTC] = FutureSubAccount{
-		Currency:      BTC,
+	futureAcc := new(types.FutureAccount)
+	futureAcc.FutureSubAccounts = make(map[types.Currency]types.FutureSubAccount, 1)
+	futureAcc.FutureSubAccounts[types.BTC] = types.FutureSubAccount{
+		Currency:      types.BTC,
 		AccountRights: resp.MarginBalance / 100000000,
 		KeepDeposit:   resp.InitMargin / 100000000,
 		ProfitUnreal:  resp.UnrealisedPnl / 100000000,
@@ -123,12 +126,12 @@ type BitmexOrder struct {
 	Timestamp   time.Time `json:"timestamp"`
 }
 
-func (bm *bitmex) PlaceFutureOrder(currencyPair CurrencyPair, contractType, price, amount string, openType, matchPrice int, leverRate float64) (string, error) {
+func (bm *bitmex) PlaceFutureOrder(currencyPair types.CurrencyPair, contractType, price, amount string, openType, matchPrice int, leverRate float64) (string, error) {
 	fOrder, err := bm.PlaceFutureOrder2(currencyPair, contractType, price, amount, openType, matchPrice, leverRate)
 	return fOrder.OrderID2, err
 }
 
-func (bm *bitmex) PlaceFutureOrder2(currencyPair CurrencyPair, contractType, price, amount string, openType, matchPrice int, leverRate float64) (*FutureOrder, error) {
+func (bm *bitmex) PlaceFutureOrder2(currencyPair types.CurrencyPair, contractType, price, amount string, openType, matchPrice int, leverRate float64) (*types.FutureOrder, error) {
 	var createOrderParameter BitmexOrder
 
 	var resp struct {
@@ -149,9 +152,9 @@ func (bm *bitmex) PlaceFutureOrder2(currencyPair CurrencyPair, contractType, pri
 	}
 
 	switch openType {
-	case OPEN_BUY, CLOSE_SELL:
+	case types.OPEN_BUY, types.CLOSE_SELL:
 		createOrderParameter.Side = "Buy"
-	case OPEN_SELL, CLOSE_BUY:
+	case types.OPEN_SELL, types.CLOSE_BUY:
 		createOrderParameter.Side = "Sell"
 	}
 
@@ -159,7 +162,7 @@ func (bm *bitmex) PlaceFutureOrder2(currencyPair CurrencyPair, contractType, pri
 	//	createOrderParameter.OrderQty = -ToInt(amount)
 	//}
 
-	fOrder := &FutureOrder{
+	fOrder := &types.FutureOrder{
 		ClientOid:    createOrderParameter.ClOrdID,
 		Currency:     currencyPair,
 		Price:        ToFloat64(price),
@@ -180,15 +183,15 @@ func (bm *bitmex) PlaceFutureOrder2(currencyPair CurrencyPair, contractType, pri
 	return fOrder, nil
 }
 
-func (bm *bitmex) LimitFuturesOrder(currencyPair CurrencyPair, contractType, price, amount string, openType int, opt ...LimitOrderOptionalParameter) (*FutureOrder, error) {
+func (bm *bitmex) LimitFuturesOrder(currencyPair types.CurrencyPair, contractType, price, amount string, openType int, opt ...types.LimitOrderOptionalParameter) (*types.FutureOrder, error) {
 	return bm.PlaceFutureOrder2(currencyPair, contractType, price, amount, openType, 0, 10)
 }
 
-func (bm *bitmex) MarketFuturesOrder(currencyPair CurrencyPair, contractType, amount string, openType int) (*FutureOrder, error) {
+func (bm *bitmex) MarketFuturesOrder(currencyPair types.CurrencyPair, contractType, amount string, openType int) (*types.FutureOrder, error) {
 	return bm.PlaceFutureOrder2(currencyPair, contractType, "0", amount, openType, 1, 10)
 }
 
-func (bm *bitmex) FutureCancelOrder(currencyPair CurrencyPair, contractType, orderId string) (bool, error) {
+func (bm *bitmex) FutureCancelOrder(currencyPair types.CurrencyPair, contractType, orderId string) (bool, error) {
 	var param struct {
 		OrderID string `json:"orderID,omitempty"`
 		ClOrdID string `json:"clOrdID,omitempty"`
@@ -206,7 +209,7 @@ func (bm *bitmex) FutureCancelOrder(currencyPair CurrencyPair, contractType, ord
 	return true, nil
 }
 
-func (bm *bitmex) GetFuturePosition(currencyPair CurrencyPair, contractType string) ([]FuturePosition, error) {
+func (bm *bitmex) GetFuturePosition(currencyPair types.CurrencyPair, contractType string) ([]types.FuturePosition, error) {
 	var (
 		response []struct {
 			Symbol            string    `json:"symbol"`
@@ -230,9 +233,9 @@ func (bm *bitmex) GetFuturePosition(currencyPair CurrencyPair, contractType stri
 		return nil, er
 	}
 
-	var postions []FuturePosition
+	var postions []types.FuturePosition
 	for _, p := range response {
-		pos := FuturePosition{}
+		pos := types.FuturePosition{}
 		pos.Symbol = currencyPair
 		pos.ContractType = contractType
 		pos.CreateDate = p.OpeningTimestamp.Unix()
@@ -259,11 +262,11 @@ func (bm *bitmex) GetFuturePosition(currencyPair CurrencyPair, contractType stri
 	return postions, nil
 }
 
-func (bm *bitmex) GetFutureOrders(orderIds []string, currencyPair CurrencyPair, contractType string) ([]FutureOrder, error) {
+func (bm *bitmex) GetFutureOrders(orderIds []string, currencyPair types.CurrencyPair, contractType string) ([]types.FutureOrder, error) {
 	panic("no support")
 }
 
-func (bm *bitmex) GetFutureOrder(orderId string, currencyPair CurrencyPair, contractType string) (*FutureOrder, error) {
+func (bm *bitmex) GetFutureOrder(orderId string, currencyPair types.CurrencyPair, contractType string) (*types.FutureOrder, error) {
 	var response []BitmexOrder
 	filters := fmt.Sprintf(`{"orderID":"%s"}`, orderId)
 	param := url.Values{}
@@ -283,7 +286,7 @@ func (bm *bitmex) GetFutureOrder(orderId string, currencyPair CurrencyPair, cont
 	return &ord, nil
 }
 
-func (bm *bitmex) GetUnfinishFutureOrders(currencyPair CurrencyPair, contractType string) ([]FutureOrder, error) {
+func (bm *bitmex) GetUnfinishFutureOrders(currencyPair types.CurrencyPair, contractType string) ([]types.FutureOrder, error) {
 	var response []BitmexOrder
 
 	query := url.Values{}
@@ -295,7 +298,7 @@ func (bm *bitmex) GetUnfinishFutureOrders(currencyPair CurrencyPair, contractTyp
 		return nil, errr
 	}
 
-	var orders []FutureOrder
+	var orders []types.FutureOrder
 	for _, v := range response {
 		ord := bm.adaptOrder(v)
 		ord.Currency = currencyPair
@@ -310,18 +313,18 @@ func (bm *bitmex) GetFee() (float64, error) {
 	panic("no support")
 }
 
-func (bm *bitmex) GetFutureDepth(currencyPair CurrencyPair, contractType string, size int) (*Depth, error) {
+func (bm *bitmex) GetFutureDepth(currencyPair types.CurrencyPair, contractType string, size int) (*types.Depth, error) {
 	sym := bm.adaptCurrencyPairToSymbol(currencyPair, contractType)
 	uri := fmt.Sprintf("/api/v1/orderBook/L2?symbol=%s&depth=%d", sym, size)
 
-	resp, err := HttpGet3(bm.HttpClient, bm.Endpoint+uri, nil)
+	resp, err := api.HttpGet3(bm.HttpClient, bm.Endpoint+uri, nil)
 	if err != nil {
-		return nil, HTTP_ERR_CODE.OriginErr(err.Error())
+		return nil, exchange.HTTP_ERR_CODE.OriginErr(err.Error())
 	}
 
 	//log.Println(resp)
 
-	dep := new(Depth)
+	dep := new(types.Depth)
 	dep.UTime = time.Now()
 	dep.Pair = currencyPair
 	dep.ContractType = sym
@@ -330,18 +333,18 @@ func (bm *bitmex) GetFutureDepth(currencyPair CurrencyPair, contractType string,
 		rr := r.(map[string]interface{})
 		switch strings.ToLower(rr["side"].(string)) {
 		case "sell":
-			dep.AskList = append(dep.AskList, DepthRecord{Price: ToFloat64(rr["price"]), Amount: ToFloat64(rr["size"])})
+			dep.AskList = append(dep.AskList, types.DepthRecord{Price: ToFloat64(rr["price"]), Amount: ToFloat64(rr["size"])})
 		case "buy":
-			dep.BidList = append(dep.BidList, DepthRecord{Price: ToFloat64(rr["price"]), Amount: ToFloat64(rr["size"])})
+			dep.BidList = append(dep.BidList, types.DepthRecord{Price: ToFloat64(rr["price"]), Amount: ToFloat64(rr["size"])})
 		}
 	}
 
 	return dep, nil
 }
 
-func (bm *bitmex) GetFutureTicker(currencyPair CurrencyPair, contractType string) (*Ticker, error) {
+func (bm *bitmex) GetFutureTicker(currencyPair types.CurrencyPair, contractType string) (*types.Ticker, error) {
 	uri := fmt.Sprintf("/api/v1/instrument?symbol=%s", bm.adaptCurrencyPairToSymbol(currencyPair, contractType))
-	resp, err := HttpGet3(bm.HttpClient, bm.Endpoint+uri, nil)
+	resp, err := api.HttpGet3(bm.HttpClient, bm.Endpoint+uri, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -357,7 +360,7 @@ func (bm *bitmex) GetFutureTicker(currencyPair CurrencyPair, contractType string
 
 	date, _ := time.Parse(time.RFC3339, tickermap["timestamp"].(string))
 
-	return &Ticker{
+	return &types.Ticker{
 		Pair: currencyPair,
 		Last: ToFloat64(tickermap["lastPrice"]),
 		High: ToFloat64(tickermap["highPrice"]),
@@ -372,7 +375,7 @@ func (bm *bitmex) GetFutureTicker(currencyPair CurrencyPair, contractType string
 func (bm *bitmex) GetIndicativeFundingRate(symbol string) (float64, *time.Time, error) {
 	//indicativeFundingRate
 	uri := fmt.Sprintf("/api/v1/instrument?symbol=%s", symbol)
-	resp, err := HttpGet3(bm.HttpClient, bm.Endpoint+uri, nil)
+	resp, err := api.HttpGet3(bm.HttpClient, bm.Endpoint+uri, nil)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -392,14 +395,14 @@ func (bm *bitmex) GetIndicativeFundingRate(symbol string) (float64, *time.Time, 
 }
 
 func (bm *bitmex) GetExchangeName() string {
-	return BITMEX
+	return types.BITMEX
 }
 
-func (bm *bitmex) GetFutureIndex(currencyPair CurrencyPair) (float64, error) {
+func (bm *bitmex) GetFutureIndex(currencyPair types.CurrencyPair) (float64, error) {
 	panic("no support")
 }
 
-func (bm *bitmex) GetContractValue(currencyPair CurrencyPair) (float64, error) {
+func (bm *bitmex) GetContractValue(currencyPair types.CurrencyPair) (float64, error) {
 	return 1.0, nil
 }
 
@@ -407,23 +410,23 @@ func (bm *bitmex) GetDeliveryTime() (int, int, int, int) {
 	panic("no support")
 }
 
-func (bm *bitmex) GetFutureEstimatedPrice(currencyPair CurrencyPair) (float64, error) {
+func (bm *bitmex) GetFutureEstimatedPrice(currencyPair types.CurrencyPair) (float64, error) {
 	panic("no support")
 }
 
-func (bm *bitmex) GetKlineRecords(contract_type string, currency CurrencyPair, period KlinePeriod, size int, optional ...OptionalParameter) ([]FutureKline, error) {
+func (bm *bitmex) GetKlineRecords(contract_type string, currency types.CurrencyPair, period types.KlinePeriod, size int, optional ...types.OptionalParameter) ([]types.FutureKline, error) {
 	urlPath := "/api/v1/trade/bucketed?binSize=%s&partial=false&symbol=%s&count=%d&startTime=%s&reverse=true"
 	contractId := bm.adaptCurrencyPairToSymbol(currency, contract_type)
 
 	var granularity string
 	switch period {
-	case KLINE_PERIOD_1MIN:
+	case types.KLINE_PERIOD_1MIN:
 		granularity = "1m"
-	case KLINE_PERIOD_5MIN:
+	case types.KLINE_PERIOD_5MIN:
 		granularity = "5m"
-	case KLINE_PERIOD_1H, KLINE_PERIOD_60MIN:
+	case types.KLINE_PERIOD_1H, types.KLINE_PERIOD_60MIN:
 		granularity = "1h"
-	case KLINE_PERIOD_1DAY:
+	case types.KLINE_PERIOD_1DAY:
 		granularity = "1d"
 	default:
 		granularity = "5m"
@@ -435,17 +438,17 @@ func (bm *bitmex) GetKlineRecords(contract_type string, currency CurrencyPair, p
 	}
 
 	uri := fmt.Sprintf(urlPath, granularity, contractId, size, sinceTime.Format(time.RFC3339))
-	response, err := HttpGet3(bm.HttpClient, bm.Endpoint+uri, nil)
+	response, err := api.HttpGet3(bm.HttpClient, bm.Endpoint+uri, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	var klines []FutureKline
+	var klines []types.FutureKline
 	for _, record := range response {
 		r := record.(map[string]interface{})
 		t, _ := time.Parse(time.RFC3339, fmt.Sprint(r["timestamp"]))
-		klines = append(klines, FutureKline{
-			Kline: &Kline{
+		klines = append(klines, types.FutureKline{
+			Kline: &types.Kline{
 				Timestamp: t.Unix(),
 				Pair:      currency,
 				Open:      ToFloat64(r["open"]),
@@ -458,7 +461,7 @@ func (bm *bitmex) GetKlineRecords(contract_type string, currency CurrencyPair, p
 	return klines, nil
 }
 
-func (bm *bitmex) GetTrades(contract_type string, currency CurrencyPair, since int64) ([]Trade, error) {
+func (bm *bitmex) GetTrades(contract_type string, currency types.CurrencyPair, since int64) ([]types.Trade, error) {
 	var urlPath = "/api/v1/trade?symbol=%s&startTime=%s&reverse=true"
 	contractId := bm.adaptCurrencyPairToSymbol(currency, contract_type)
 	sinceTime := time.Unix(int64(since), 0).UTC()
@@ -468,20 +471,20 @@ func (bm *bitmex) GetTrades(contract_type string, currency CurrencyPair, since i
 	}
 
 	uri := fmt.Sprintf(urlPath, contractId, sinceTime.Format(time.RFC3339))
-	response, err := HttpGet3(bm.HttpClient, bm.Endpoint+uri, nil)
+	response, err := api.HttpGet3(bm.HttpClient, bm.Endpoint+uri, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	trades := make([]Trade, 0)
+	trades := make([]types.Trade, 0)
 	for _, v := range response {
 		vv := v.(map[string]interface{})
-		side := BUY
+		side := types.BUY
 		if vv["side"] == "Sell" {
-			side = SELL
+			side = types.SELL
 		}
 		timestamp, _ := time.Parse(time.RFC3339, fmt.Sprintf("%v", vv["timestamp"]))
-		trades = append(trades, Trade{
+		trades = append(trades, types.Trade{
 			Tid:    ToInt64(vv["trdMatchID"]),
 			Type:   side,
 			Amount: ToFloat64(vv["size"]),
@@ -494,32 +497,32 @@ func (bm *bitmex) GetTrades(contract_type string, currency CurrencyPair, since i
 	return trades, nil
 }
 
-func (bm *bitmex) adaptCurrencyPairToSymbol(pair CurrencyPair, contract string) string {
-	if contract == "" || contract == SWAP_CONTRACT {
-		if pair.CurrencyA.Eq(BTC) {
-			pair = NewCurrencyPair(XBT, USD)
+func (bm *bitmex) adaptCurrencyPairToSymbol(pair types.CurrencyPair, contract string) string {
+	if contract == "" || contract == types.SWAP_CONTRACT {
+		if pair.CurrencyA.Eq(types.BTC) {
+			pair = types.NewCurrencyPair(types.XBT, types.USD)
 		}
-		if pair.CurrencyB.Eq(BTC) {
-			pair = NewCurrencyPair(pair.CurrencyA, XBT)
+		if pair.CurrencyB.Eq(types.BTC) {
+			pair = types.NewCurrencyPair(pair.CurrencyA, types.XBT)
 		}
 		return pair.AdaptUsdtToUsd().ToSymbol("")
 	}
 
 	coin := pair.CurrencyA.Symbol
-	if pair.CurrencyA.Eq(BTC) {
-		coin = XBT.Symbol
+	if pair.CurrencyA.Eq(types.BTC) {
+		coin = types.XBT.Symbol
 	}
 	return fmt.Sprintf("%s%s", coin, strings.ToUpper(contract))
 }
 
-func (bm *bitmex) adaptOrder(o BitmexOrder) FutureOrder {
-	status := ORDER_UNFINISH
+func (bm *bitmex) adaptOrder(o BitmexOrder) types.FutureOrder {
+	status := types.ORDER_UNFINISH
 	if o.OrdStatus == "Filled" {
-		status = ORDER_FINISH
+		status = types.ORDER_FINISH
 	} else if o.OrdStatus == "Canceled" {
-		status = ORDER_CANCEL
+		status = types.ORDER_CANCEL
 	}
-	return FutureOrder{
+	return types.FutureOrder{
 		OrderID2:   o.OrderID,
 		ClientOid:  o.ClOrdID,
 		Amount:     float64(o.OrderQty),

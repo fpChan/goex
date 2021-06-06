@@ -3,7 +3,7 @@ package okex
 import (
 	"errors"
 	"fmt"
-	. "github.com/fpChan/goex"
+	"github.com/fpChan/goex/types"
 )
 
 const (
@@ -16,7 +16,7 @@ type OKExWallet struct {
 	*OKEx
 }
 
-func (ok *OKExWallet) GetAccount() (*Account, error) {
+func (ok *OKExWallet) GetAccount() (*types.Account, error) {
 	var response []struct {
 		Balance   float64 `json:"balance,string"`
 		Available float64 `json:"available,string"`
@@ -27,12 +27,12 @@ func (ok *OKExWallet) GetAccount() (*Account, error) {
 	if err != nil {
 		return nil, err
 	}
-	var acc Account
-	acc.SubAccounts = make(map[Currency]SubAccount, 2)
-	acc.Exchange = OKEX
+	var acc types.Account
+	acc.SubAccounts = make(map[types.Currency]types.SubAccount, 2)
+	acc.Exchange = types.OKEX
 	for _, itm := range response {
-		currency := NewCurrency(itm.Currency, "")
-		acc.SubAccounts[currency] = SubAccount{
+		currency := types.NewCurrency(itm.Currency, "")
+		acc.SubAccounts[currency] = types.SubAccount{
 			Currency:     currency,
 			Amount:       itm.Balance,
 			ForzenAmount: itm.Hold,
@@ -52,7 +52,7 @@ from或to指定为0时，sub_account为必填项。
 
 from或to指定为5时，instrument_id为必填项。
 */
-func (ok *OKExWallet) Transfer(param TransferParameter) error {
+func (ok *OKExWallet) Transfer(param types.TransferParameter) error {
 	var response struct {
 		Result       bool   `json:"result"`
 		ErrorCode    string `json:"code"`
@@ -74,7 +74,7 @@ func (ok *OKExWallet) Transfer(param TransferParameter) error {
 /*
  认证过的数字货币地址、邮箱或手机号。某些数字货币地址格式为:地址+标签，例："ARDOR-7JF3-8F2E-QUWZ-CAN7F：123456"
 */
-func (ok *OKExWallet) Withdrawal(param WithdrawParameter) (withdrawId string, err error) {
+func (ok *OKExWallet) Withdrawal(param types.WithdrawParameter) (withdrawId string, err error) {
 	var response struct {
 		Result       bool   `json:"result"`
 		WithdrawId   string `json:"withdraw_id"`
@@ -104,7 +104,7 @@ type DepositAddress struct {
 	Memo        string `json:"memo"` //eos need
 }
 
-func (ok *OKExWallet) GetDepositAddress(currency Currency) ([]DepositAddress, error) {
+func (ok *OKExWallet) GetDepositAddress(currency types.Currency) ([]DepositAddress, error) {
 	urlPath := fmt.Sprintf("/api/account/v3/deposit/address?currency=%s", currency.Symbol)
 	var response []DepositAddress
 	err := ok.DoRequest("GET", urlPath, "", &response)
@@ -120,9 +120,9 @@ type WithdrawFee struct {
 	MinFee   string `json:"min_fee"`
 }
 
-func (ok *OKExWallet) GetWithDrawalFee(currency *Currency) ([]WithdrawFee, error) {
+func (ok *OKExWallet) GetWithDrawalFee(currency *types.Currency) ([]WithdrawFee, error) {
 	urlPath := "/api/account/v3/withdrawal/fee"
-	if currency != nil && *currency != UNKNOWN {
+	if currency != nil && *currency != types.UNKNOWN {
 		urlPath += "?currency=" + currency.Symbol
 	}
 	var response []WithdrawFee
@@ -133,22 +133,22 @@ func (ok *OKExWallet) GetWithDrawalFee(currency *Currency) ([]WithdrawFee, error
 	return response, nil
 }
 
-func (ok *OKExWallet) GetWithDrawHistory(currency *Currency) ([]DepositWithdrawHistory, error) {
+func (ok *OKExWallet) GetWithDrawHistory(currency *types.Currency) ([]types.DepositWithdrawHistory, error) {
 	urlPath := "/api/account/v3/withdrawal/history"
-	if currency != nil && *currency != UNKNOWN {
+	if currency != nil && *currency != types.UNKNOWN {
 		urlPath += "/" + currency.Symbol
 	}
-	var response []DepositWithdrawHistory
+	var response []types.DepositWithdrawHistory
 	err := ok.DoRequest("GET", urlPath, "", &response)
 	return response, err
 }
 
-func (ok *OKExWallet) GetDepositHistory(currency *Currency) ([]DepositWithdrawHistory, error) {
+func (ok *OKExWallet) GetDepositHistory(currency *types.Currency) ([]types.DepositWithdrawHistory, error) {
 	urlPath := "/api/account/v3/deposit/history"
-	if currency != nil && *currency != UNKNOWN {
+	if currency != nil && *currency != types.UNKNOWN {
 		urlPath += "/" + currency.Symbol
 	}
-	var response []DepositWithdrawHistory
+	var response []types.DepositWithdrawHistory
 	err := ok.DoRequest("GET", urlPath, "", &response)
 	return response, err
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/fpChan/goex"
+	"github.com/fpChan/goex/types"
 	"strings"
 )
 
@@ -11,7 +12,7 @@ type OKExMargin struct {
 	*OKEx
 }
 
-func (ok *OKExMargin) GetMarginAccount(pair CurrencyPair) (*MarginAccount, error) {
+func (ok *OKExMargin) GetMarginAccount(pair types.CurrencyPair) (*types.MarginAccount, error) {
 	urlPath := fmt.Sprintf("/api/margin/v3/accounts/%s", pair.ToSymbol("-"))
 	var response map[string]interface{}
 	err := ok.DoRequest("GET", urlPath, "", &response)
@@ -19,8 +20,8 @@ func (ok *OKExMargin) GetMarginAccount(pair CurrencyPair) (*MarginAccount, error
 		return nil, err
 	}
 
-	acc := MarginAccount{}
-	acc.Sub = make(map[Currency]MarginSubAccount, 2)
+	acc := types.MarginAccount{}
+	acc.Sub = make(map[types.Currency]types.MarginSubAccount, 2)
 
 	acc.LiquidationPrice = ToFloat64(response["liquidation_price"])
 	acc.RiskRate = ToFloat64(response["risk_rate"])
@@ -28,13 +29,13 @@ func (ok *OKExMargin) GetMarginAccount(pair CurrencyPair) (*MarginAccount, error
 
 	for k, v := range response {
 		if strings.Contains(k, "currency") {
-			c := NewCurrency(strings.Split(k, ":")[1], "")
+			c := types.NewCurrency(strings.Split(k, ":")[1], "")
 			vv := v.(map[string]interface{})
 			if err != nil {
 				return nil, err
 			}
 
-			acc.Sub[c] = MarginSubAccount{
+			acc.Sub[c] = types.MarginSubAccount{
 				Balance:     ToFloat64(vv["balance"]),
 				Frozen:      ToFloat64(vv["frozen"]),
 				Available:   ToFloat64(vv["available"]),
@@ -53,7 +54,7 @@ func (ok *OKExMargin) GetMarginAccount(pair CurrencyPair) (*MarginAccount, error
   currency： 需要借的币种
   amount : 借的金额
 */
-func (ok *OKExMargin) Borrow(parameter BorrowParameter) (borrowId string, err error) {
+func (ok *OKExMargin) Borrow(parameter types.BorrowParameter) (borrowId string, err error) {
 	var param = struct {
 		InstrumentId string `json:"instrument_id"`
 		Currency     string `json:"currency"`
@@ -84,7 +85,7 @@ func (ok *OKExMargin) Borrow(parameter BorrowParameter) (borrowId string, err er
 	return response.BorrowId, nil
 }
 
-func (ok *OKExMargin) Repayment(parameter RepaymentParameter) (repaymentId string, err error) {
+func (ok *OKExMargin) Repayment(parameter types.RepaymentParameter) (repaymentId string, err error) {
 	urlPath := "/api/margin/v3/accounts/repayment"
 	param := struct {
 		BorrowId     string `json:"borrow_id,omitempty"`
@@ -117,7 +118,7 @@ func (ok *OKExMargin) Repayment(parameter RepaymentParameter) (repaymentId strin
 	return response.RepaymentId, nil
 }
 
-func (ok *OKExMargin) PlaceOrder(ord *Order) (*Order, error) {
+func (ok *OKExMargin) PlaceOrder(ord *types.Order) (*types.Order, error) {
 	param := PlaceOrderParam{
 		ClientOid:     ok.UUID(),
 		InstrumentId:  ord.Currency.AdaptUsdToUsdt().ToLower().ToSymbol("-"),
@@ -128,14 +129,14 @@ func (ok *OKExMargin) PlaceOrder(ord *Order) (*Order, error) {
 	var response PlaceOrderResponse
 
 	switch ord.Side {
-	case BUY, SELL:
+	case types.BUY, types.SELL:
 		param.Side = strings.ToLower(ord.Side.String())
 		param.Price = ord.Price
 		param.Size = ord.Amount
-	case SELL_MARKET:
+	case types.SELL_MARKET:
 		param.Side = "sell"
 		param.Size = ord.Amount
-	case BUY_MARKET:
+	case types.BUY_MARKET:
 		param.Side = "buy"
 		param.Notional = ord.Price
 	default:
@@ -159,14 +160,14 @@ func (ok *OKExMargin) PlaceOrder(ord *Order) (*Order, error) {
 	return ord, nil
 }
 
-func (ok *OKExMargin) GetUnfinishOrders(currency CurrencyPair) ([]Order, error) {
+func (ok *OKExMargin) GetUnfinishOrders(currency types.CurrencyPair) ([]types.Order, error) {
 	var response []OrderResponse
 	err := ok.DoRequest("GET", fmt.Sprintf("/api/margin/v3/orders_pending?instrument_id=%s", currency.AdaptUsdToUsdt().ToSymbol("-")), "", &response)
 	if err != nil {
 		return nil, err
 	}
 
-	var orders []Order
+	var orders []types.Order
 
 	for _, info := range response {
 		ord := ok.OKExSpot.adaptOrder(info)
@@ -177,7 +178,7 @@ func (ok *OKExMargin) GetUnfinishOrders(currency CurrencyPair) ([]Order, error) 
 	return orders, nil
 }
 
-func (ok *OKExMargin) CancelOrder(orderId string, currency CurrencyPair) (bool, error) {
+func (ok *OKExMargin) CancelOrder(orderId string, currency types.CurrencyPair) (bool, error) {
 	urlPath := fmt.Sprintf("/api/margin/v3/cancel_orders/%s", orderId)
 	reqBody, _, _ := ok.BuildRequestBody(map[string]string{"instrument_id": currency.AdaptUsdToUsdt().ToSymbol("-")})
 	var response struct {
@@ -200,7 +201,7 @@ func (ok *OKExMargin) CancelOrder(orderId string, currency CurrencyPair) (bool, 
 }
 
 //orderId can set client oid or orderId
-func (ok *OKExMargin) GetOneOrder(orderId string, currency CurrencyPair) (*Order, error) {
+func (ok *OKExMargin) GetOneOrder(orderId string, currency types.CurrencyPair) (*types.Order, error) {
 	urlPath := "/api/margin/v3/orders/" + orderId + "?instrument_id=" + currency.AdaptUsdToUsdt().ToSymbol("-")
 	//param := struct {
 	//	InstrumentId string `json:"instrument_id"`

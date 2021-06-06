@@ -1,14 +1,14 @@
 package huobi
 
 import (
-	"github.com/fpChan/goex"
+	"github.com/fpChan/goex/types"
 	"testing"
 )
 
 var wallet *Wallet
 
 func init() {
-	wallet = NewWallet(&goex.APIConfig{
+	wallet = NewWallet(&types.APIConfig{
 		HttpClient:   httpProxyClient,
 		ApiKey:       "",
 		ApiSecretKey: "",
@@ -16,10 +16,10 @@ func init() {
 }
 
 func TestWallet_Transfer(t *testing.T) {
-	t.Log(wallet.Transfer(goex.TransferParameter{
+	t.Log(wallet.Transfer(types.TransferParameter{
 		Currency: "BTC",
-		From:     goex.SWAP_USDT,
-		To:       goex.SPOT,
+		From:     types.SWAP_USDT,
+		To:       types.SPOT,
 		Amount:   11,
 	}))
 }

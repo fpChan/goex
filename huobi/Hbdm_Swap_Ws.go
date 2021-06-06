@@ -6,24 +6,27 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/fpChan/goex"
+	"github.com/fpChan/goex/common/api"
+	"github.com/fpChan/goex/common/exchange"
 	"github.com/fpChan/goex/internal/logger"
+	"github.com/fpChan/goex/types"
 	"strings"
 	"sync"
 	"time"
 )
 
 type HbdmSwapWs struct {
-	*WsBuilder
+	*api.WsBuilder
 	sync.Once
-	wsConn *WsConn
+	wsConn *api.WsConn
 
-	tickerCallback func(*FutureTicker)
-	depthCallback  func(*Depth)
-	tradeCallback  func(*Trade, string)
+	tickerCallback func(*types.FutureTicker)
+	depthCallback  func(*types.Depth)
+	tradeCallback  func(*types.Trade, string)
 }
 
 func NewHbdmSwapWs() *HbdmSwapWs {
-	ws := &HbdmSwapWs{WsBuilder: NewWsBuilder()}
+	ws := &HbdmSwapWs{WsBuilder: api.NewWsBuilder()}
 	ws.WsBuilder = ws.WsBuilder.
 		WsUrl("wss://api.hbdm.com/swap-ws").
 		//ProxyUrl("socks5://127.0.0.1:1080").
@@ -35,7 +38,7 @@ func NewHbdmSwapWs() *HbdmSwapWs {
 
 //构建usdt本位永续合约ws
 func NewHbdmLinearSwapWs() *HbdmSwapWs {
-	ws := &HbdmSwapWs{WsBuilder: NewWsBuilder()}
+	ws := &HbdmSwapWs{WsBuilder: api.NewWsBuilder()}
 	ws.WsBuilder = ws.WsBuilder.
 		WsUrl("wss://api.hbdm.com/linear-swap-ws").
 		//ProxyUrl("socks5://127.0.0.1:1080").
@@ -45,31 +48,31 @@ func NewHbdmLinearSwapWs() *HbdmSwapWs {
 	return ws
 }
 
-func (ws *HbdmSwapWs) SetCallbacks(tickerCallback func(*FutureTicker),
-	depthCallback func(*Depth),
-	tradeCallback func(*Trade, string)) {
+func (ws *HbdmSwapWs) SetCallbacks(tickerCallback func(*types.FutureTicker),
+	depthCallback func(*types.Depth),
+	tradeCallback func(*types.Trade, string)) {
 	ws.tickerCallback = tickerCallback
 	ws.depthCallback = depthCallback
 	ws.tradeCallback = tradeCallback
 }
 
-func (ws *HbdmSwapWs) TickerCallback(call func(ticker *FutureTicker)) {
+func (ws *HbdmSwapWs) TickerCallback(call func(ticker *types.FutureTicker)) {
 	ws.tickerCallback = call
 }
-func (ws *HbdmSwapWs) TradeCallback(call func(trade *Trade, contract string)) {
+func (ws *HbdmSwapWs) TradeCallback(call func(trade *types.Trade, contract string)) {
 	ws.tradeCallback = call
 }
 
-func (ws *HbdmSwapWs) DepthCallback(call func(depth *Depth)) {
+func (ws *HbdmSwapWs) DepthCallback(call func(depth *types.Depth)) {
 	ws.depthCallback = call
 }
 
-func (ws *HbdmSwapWs) SubscribeTicker(pair CurrencyPair, contract string) error {
+func (ws *HbdmSwapWs) SubscribeTicker(pair types.CurrencyPair, contract string) error {
 	if ws.tickerCallback == nil {
 		return errors.New("please set ticker callback func")
 	}
 
-	if contract == SWAP_CONTRACT || contract == SWAP_USDT_CONTRACT {
+	if contract == types.SWAP_CONTRACT || contract == types.SWAP_USDT_CONTRACT {
 		return ws.subscribe(map[string]interface{}{
 			"id":  "ticker_1",
 			"sub": fmt.Sprintf("market.%s.detail", pair.ToSymbol("-"))})
@@ -78,12 +81,12 @@ func (ws *HbdmSwapWs) SubscribeTicker(pair CurrencyPair, contract string) error 
 	return errors.New("not implement")
 }
 
-func (ws *HbdmSwapWs) SubscribeDepth(pair CurrencyPair, contract string) error {
+func (ws *HbdmSwapWs) SubscribeDepth(pair types.CurrencyPair, contract string) error {
 	if ws.depthCallback == nil {
 		return errors.New("please set depth callback func")
 	}
 
-	if contract == SWAP_CONTRACT || contract == SWAP_USDT_CONTRACT {
+	if contract == types.SWAP_CONTRACT || contract == types.SWAP_USDT_CONTRACT {
 		return ws.subscribe(map[string]interface{}{
 			"id":  "swap.depth",
 			"sub": fmt.Sprintf("market.%s.depth.step6", pair.ToSymbol("-"))})
@@ -92,12 +95,12 @@ func (ws *HbdmSwapWs) SubscribeDepth(pair CurrencyPair, contract string) error {
 	return errors.New("not implement")
 }
 
-func (ws *HbdmSwapWs) SubscribeTrade(pair CurrencyPair, contract string) error {
+func (ws *HbdmSwapWs) SubscribeTrade(pair types.CurrencyPair, contract string) error {
 	if ws.tradeCallback == nil {
 		return errors.New("please set trade callback func")
 	}
 
-	if contract == SWAP_CONTRACT || contract == SWAP_USDT_CONTRACT {
+	if contract == types.SWAP_CONTRACT || contract == types.SWAP_USDT_CONTRACT {
 		return ws.subscribe(map[string]interface{}{
 			"id":  "swap_trade_3",
 			"sub": fmt.Sprintf("market.%s.trade.detail", pair.ToSymbol("-"))})
@@ -204,33 +207,33 @@ func (ws *HbdmSwapWs) handle(msg []byte) error {
 	return nil
 }
 
-func (ws *HbdmSwapWs) parseTicker(r DetailResponse) FutureTicker {
-	return FutureTicker{Ticker: &Ticker{Last: r.Close, High: r.High, Low: r.Low, Vol: r.Amount}}
+func (ws *HbdmSwapWs) parseTicker(r DetailResponse) types.FutureTicker {
+	return types.FutureTicker{Ticker: &types.Ticker{Last: r.Close, High: r.High, Low: r.Low, Vol: r.Amount}}
 }
 
-func (ws *HbdmSwapWs) parseCurrencyAndContract(ch string) (CurrencyPair, string, error) {
+func (ws *HbdmSwapWs) parseCurrencyAndContract(ch string) (types.CurrencyPair, string, error) {
 	el := strings.Split(ch, ".")
 
 	if len(el) < 2 {
-		return UNKNOWN_PAIR, "", errors.New(ch)
+		return types.UNKNOWN_PAIR, "", errors.New(ch)
 	}
 
-	pair := NewCurrencyPair3(el[1], "-")
-	if pair.CurrencyB.Eq(USD) {
-		return pair, SWAP_CONTRACT, nil
+	pair := types.NewCurrencyPair3(el[1], "-")
+	if pair.CurrencyB.Eq(types.USD) {
+		return pair, types.SWAP_CONTRACT, nil
 	}
 
-	return pair, SWAP_USDT_CONTRACT, nil
+	return pair, types.SWAP_USDT_CONTRACT, nil
 }
 
-func (ws *HbdmSwapWs) parseTrade(r TradeResponse) []Trade {
-	var trades []Trade
+func (ws *HbdmSwapWs) parseTrade(r TradeResponse) []types.Trade {
+	var trades []types.Trade
 	for _, v := range r.Data {
-		trades = append(trades, Trade{
+		trades = append(trades, types.Trade{
 			Tid:    v.Id,
 			Price:  v.Price,
 			Amount: v.Amount,
-			Type:   AdaptTradeSide(v.Direction),
+			Type:   exchange.AdaptTradeSide(v.Direction),
 			Date:   v.Ts})
 	}
 	return trades

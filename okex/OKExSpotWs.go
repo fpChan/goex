@@ -6,6 +6,7 @@ import (
 	"fmt"
 	. "github.com/fpChan/goex"
 	"github.com/fpChan/goex/internal/logger"
+	"github.com/fpChan/goex/types"
 	"sort"
 	"strconv"
 	"strings"
@@ -15,10 +16,10 @@ import (
 type OKExV3SpotWs struct {
 	base           *OKEx
 	v3Ws           *OKExV3Ws
-	tickerCallback func(*Ticker)
-	depthCallback  func(*Depth)
-	tradeCallback  func(*Trade)
-	klineCallback  func(*Kline, KlinePeriod)
+	tickerCallback func(*types.Ticker)
+	depthCallback  func(*types.Depth)
+	tradeCallback  func(*types.Trade)
+	klineCallback  func(*types.Kline, types.KlinePeriod)
 }
 
 func NewOKExSpotV3Ws(base *OKEx) *OKExV3SpotWs {
@@ -29,33 +30,33 @@ func NewOKExSpotV3Ws(base *OKEx) *OKExV3SpotWs {
 	return okV3Ws
 }
 
-func (okV3Ws *OKExV3SpotWs) TickerCallback(tickerCallback func(*Ticker)) {
+func (okV3Ws *OKExV3SpotWs) TickerCallback(tickerCallback func(*types.Ticker)) {
 	okV3Ws.tickerCallback = tickerCallback
 }
 
-func (okV3Ws *OKExV3SpotWs) DepthCallback(depthCallback func(*Depth)) {
+func (okV3Ws *OKExV3SpotWs) DepthCallback(depthCallback func(*types.Depth)) {
 	okV3Ws.depthCallback = depthCallback
 }
 
-func (okV3Ws *OKExV3SpotWs) TradeCallback(tradeCallback func(*Trade)) {
+func (okV3Ws *OKExV3SpotWs) TradeCallback(tradeCallback func(*types.Trade)) {
 	okV3Ws.tradeCallback = tradeCallback
 }
 
-func (okV3Ws *OKExV3SpotWs) KLineCallback(klineCallback func(kline *Kline, period KlinePeriod)) {
+func (okV3Ws *OKExV3SpotWs) KLineCallback(klineCallback func(kline *types.Kline, period types.KlinePeriod)) {
 	okV3Ws.klineCallback = klineCallback
 }
 
-func (okV3Ws *OKExV3SpotWs) SetCallbacks(tickerCallback func(*Ticker),
-	depthCallback func(*Depth),
-	tradeCallback func(*Trade),
-	klineCallback func(*Kline, KlinePeriod)) {
+func (okV3Ws *OKExV3SpotWs) SetCallbacks(tickerCallback func(*types.Ticker),
+	depthCallback func(*types.Depth),
+	tradeCallback func(*types.Trade),
+	klineCallback func(*types.Kline, types.KlinePeriod)) {
 	okV3Ws.tickerCallback = tickerCallback
 	okV3Ws.depthCallback = depthCallback
 	okV3Ws.tradeCallback = tradeCallback
 	okV3Ws.klineCallback = klineCallback
 }
 
-func (okV3Ws *OKExV3SpotWs) SubscribeDepth(currencyPair CurrencyPair) error {
+func (okV3Ws *OKExV3SpotWs) SubscribeDepth(currencyPair types.CurrencyPair) error {
 	if okV3Ws.depthCallback == nil {
 		return errors.New("please set depth callback func")
 	}
@@ -65,7 +66,7 @@ func (okV3Ws *OKExV3SpotWs) SubscribeDepth(currencyPair CurrencyPair) error {
 		"args": []string{fmt.Sprintf("spot/depth5:%s", currencyPair.ToSymbol("-"))}})
 }
 
-func (okV3Ws *OKExV3SpotWs) SubscribeTicker(currencyPair CurrencyPair) error {
+func (okV3Ws *OKExV3SpotWs) SubscribeTicker(currencyPair types.CurrencyPair) error {
 	if okV3Ws.tickerCallback == nil {
 		return errors.New("please set ticker callback func")
 	}
@@ -74,7 +75,7 @@ func (okV3Ws *OKExV3SpotWs) SubscribeTicker(currencyPair CurrencyPair) error {
 		"args": []string{fmt.Sprintf("spot/ticker:%s", currencyPair.ToSymbol("-"))}})
 }
 
-func (okV3Ws *OKExV3SpotWs) SubscribeTrade(currencyPair CurrencyPair) error {
+func (okV3Ws *OKExV3SpotWs) SubscribeTrade(currencyPair types.CurrencyPair) error {
 	if okV3Ws.tradeCallback == nil {
 		return errors.New("please set trade callback func")
 	}
@@ -83,12 +84,12 @@ func (okV3Ws *OKExV3SpotWs) SubscribeTrade(currencyPair CurrencyPair) error {
 		"args": []string{fmt.Sprintf("spot/trade:%s", currencyPair.ToSymbol("-"))}})
 }
 
-func (okV3Ws *OKExV3SpotWs) SubscribeKline(currencyPair CurrencyPair, period int) error {
+func (okV3Ws *OKExV3SpotWs) SubscribeKline(currencyPair types.CurrencyPair, period int) error {
 	if okV3Ws.klineCallback == nil {
 		return errors.New("place set kline callback func")
 	}
 
-	seconds := adaptKLinePeriod(KlinePeriod(period))
+	seconds := adaptKLinePeriod(types.KlinePeriod(period))
 	if seconds == -1 {
 		return fmt.Errorf("unsupported kline period %d in okex", period)
 	}
@@ -98,8 +99,8 @@ func (okV3Ws *OKExV3SpotWs) SubscribeKline(currencyPair CurrencyPair, period int
 		"args": []string{fmt.Sprintf("spot/candle%ds:%s", seconds, currencyPair.ToSymbol("-"))}})
 }
 
-func (okV3Ws *OKExV3SpotWs) getCurrencyPair(instrumentId string) CurrencyPair {
-	return NewCurrencyPair3(instrumentId, "-")
+func (okV3Ws *OKExV3SpotWs) getCurrencyPair(instrumentId string) types.CurrencyPair {
+	return types.NewCurrencyPair3(instrumentId, "-")
 }
 
 func (okV3Ws *OKExV3SpotWs) handle(ch string, data json.RawMessage) error {
@@ -107,7 +108,7 @@ func (okV3Ws *OKExV3SpotWs) handle(ch string, data json.RawMessage) error {
 		err           error
 		tickers       []spotTickerResponse
 		depthResp     []depthResponse
-		dep           Depth
+		dep           types.Depth
 		tradeResponse []struct {
 			Side         string  `json:"side"`
 			TradeId      int64   `json:"trade_id,string"`
@@ -131,7 +132,7 @@ func (okV3Ws *OKExV3SpotWs) handle(ch string, data json.RawMessage) error {
 
 		for _, t := range tickers {
 			date, _ := time.Parse(time.RFC3339, t.Timestamp)
-			okV3Ws.tickerCallback(&Ticker{
+			okV3Ws.tickerCallback(&types.Ticker{
 				Pair: okV3Ws.getCurrencyPair(t.InstrumentId),
 				Last: t.Last,
 				Buy:  t.BestBid,
@@ -156,12 +157,12 @@ func (okV3Ws *OKExV3SpotWs) handle(ch string, data json.RawMessage) error {
 		dep.Pair = okV3Ws.getCurrencyPair(depthResp[0].InstrumentId)
 		dep.UTime, _ = time.Parse(time.RFC3339, depthResp[0].Timestamp)
 		for _, itm := range depthResp[0].Asks {
-			dep.AskList = append(dep.AskList, DepthRecord{
+			dep.AskList = append(dep.AskList, types.DepthRecord{
 				Price:  ToFloat64(itm[0]),
 				Amount: ToFloat64(itm[1])})
 		}
 		for _, itm := range depthResp[0].Bids {
-			dep.BidList = append(dep.BidList, DepthRecord{
+			dep.BidList = append(dep.BidList, types.DepthRecord{
 				Price:  ToFloat64(itm[0]),
 				Amount: ToFloat64(itm[1])})
 		}
@@ -177,10 +178,10 @@ func (okV3Ws *OKExV3SpotWs) handle(ch string, data json.RawMessage) error {
 		}
 
 		for _, resp := range tradeResponse {
-			tradeSide := SELL
+			tradeSide := types.SELL
 			switch resp.Side {
 			case "buy":
-				tradeSide = BUY
+				tradeSide = types.BUY
 			}
 
 			t, err := time.Parse(time.RFC3339, resp.Timestamp)
@@ -188,7 +189,7 @@ func (okV3Ws *OKExV3SpotWs) handle(ch string, data json.RawMessage) error {
 				logger.Warn("parse timestamp error:", err)
 			}
 
-			okV3Ws.tradeCallback(&Trade{
+			okV3Ws.tradeCallback(&types.Trade{
 				Tid:    resp.TradeId,
 				Type:   tradeSide,
 				Amount: resp.Qty,
@@ -209,7 +210,7 @@ func (okV3Ws *OKExV3SpotWs) handle(ch string, data json.RawMessage) error {
 			for _, k := range candleResponse {
 				pair := okV3Ws.getCurrencyPair(k.InstrumentId)
 				tm, _ := time.Parse(time.RFC3339, k.Candle[0])
-				okV3Ws.klineCallback(&Kline{
+				okV3Ws.klineCallback(&types.Kline{
 					Pair:      pair,
 					Timestamp: tm.Unix(),
 					Open:      ToFloat64(k.Candle[1]),

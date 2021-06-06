@@ -2,9 +2,9 @@ package monitor
 
 import (
 	"encoding/json"
-	"github.com/fpChan/goex"
 	"github.com/fpChan/goex/monitor/wechat"
 	"github.com/fpChan/goex/okex"
+	"github.com/fpChan/goex/types"
 	"log"
 	"net/http"
 	"net/url"
@@ -33,7 +33,7 @@ import (
 
 func getFuturesPriceBySymbol(symbol string) {
 
-	var okex = okex.NewOKEx(&goex.APIConfig{
+	var okex = okex.NewOKEx(&types.APIConfig{
 		Endpoint: "https://www.okex.com",
 		HttpClient: &http.Client{
 			Transport: &http.Transport{

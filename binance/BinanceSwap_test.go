@@ -1,7 +1,7 @@
 package binance
 
 import (
-	goex "github.com/fpChan/goex"
+	"github.com/fpChan/goex/types"
 	"net"
 	"net/http"
 	"net/url"
@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-var bs = NewBinanceSwap(&goex.APIConfig{
+var bs = NewBinanceSwap(&types.APIConfig{
 	Endpoint: "https://testnet.binancefuture.com",
 	HttpClient: &http.Client{
 		Transport: &http.Transport{
@@ -32,20 +32,20 @@ func TestBinanceSwap_Ping(t *testing.T) {
 }
 
 func TestBinanceSwap_GetFutureDepth(t *testing.T) {
-	t.Log(bs.GetFutureDepth(goex.BTC_USDT, "", 1))
+	t.Log(bs.GetFutureDepth(types.BTC_USDT, "", 1))
 }
 
 func TestBinanceSwap_GetFutureIndex(t *testing.T) {
-	t.Log(bs.GetFutureIndex(goex.BTC_USDT))
+	t.Log(bs.GetFutureIndex(types.BTC_USDT))
 }
 
 func TestBinanceSwap_GetKlineRecords(t *testing.T) {
-	kline, err := bs.GetKlineRecords("", goex.BTC_USDT, goex.KLINE_PERIOD_4H, 1, 0)
+	kline, err := bs.GetKlineRecords("", types.BTC_USDT, types.KLINE_PERIOD_4H, 1)
 	t.Log(err, kline[0].Kline)
 }
 
 func TestBinanceSwap_GetTrades(t *testing.T) {
-	t.Log(bs.GetTrades("", goex.BTC_USDT, 0))
+	t.Log(bs.GetTrades("", types.BTC_USDT, 0))
 }
 
 func TestBinanceSwap_GetFutureUserinfo(t *testing.T) {
@@ -53,21 +53,21 @@ func TestBinanceSwap_GetFutureUserinfo(t *testing.T) {
 }
 
 func TestBinanceSwap_PlaceFutureOrder(t *testing.T) {
-	t.Log(bs.PlaceFutureOrder(goex.BTC_USDT, "", "8322", "0.01", goex.OPEN_BUY, 0, 0))
+	t.Log(bs.PlaceFutureOrder(types.BTC_USDT, "", "8322", "0.01", types.OPEN_BUY, 0, 0))
 }
 
 func TestBinanceSwap_PlaceFutureOrder2(t *testing.T) {
-	t.Log(bs.PlaceFutureOrder(goex.BTC_USDT, "", "8322", "0.01", goex.OPEN_BUY, 1, 0))
+	t.Log(bs.PlaceFutureOrder(types.BTC_USDT, "", "8322", "0.01", types.OPEN_BUY, 1, 0))
 }
 
 func TestBinanceSwap_GetFutureOrder(t *testing.T) {
-	t.Log(bs.GetFutureOrder("1431689723", goex.BTC_USDT, ""))
+	t.Log(bs.GetFutureOrder("1431689723", types.BTC_USDT, ""))
 }
 
 func TestBinanceSwap_FutureCancelOrder(t *testing.T) {
-	t.Log(bs.FutureCancelOrder(goex.BTC_USDT, "", "1431554165"))
+	t.Log(bs.FutureCancelOrder(types.BTC_USDT, "", "1431554165"))
 }
 
 func TestBinanceSwap_GetFuturePosition(t *testing.T) {
-	t.Log(bs.GetFuturePosition(goex.BTC_USDT, ""))
+	t.Log(bs.GetFuturePosition(types.BTC_USDT, ""))
 }

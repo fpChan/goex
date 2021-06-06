@@ -1,7 +1,7 @@
 package binance
 
 import (
-	"github.com/fpChan/goex"
+	"github.com/fpChan/goex/types"
 	"log"
 	"os"
 	"testing"
@@ -15,11 +15,11 @@ func createFuturesWs() {
 
 	futuresWs = NewFuturesWs()
 
-	futuresWs.DepthCallback(func(depth *goex.Depth) {
+	futuresWs.DepthCallback(func(depth *types.Depth) {
 		log.Println(depth)
 	})
 
-	futuresWs.TickerCallback(func(ticker *goex.FutureTicker) {
+	futuresWs.TickerCallback(func(ticker *types.FutureTicker) {
 		log.Println(ticker.Ticker, ticker.ContractType)
 	})
 }
@@ -27,9 +27,9 @@ func createFuturesWs() {
 func TestFuturesWs_DepthCallback(t *testing.T) {
 	createFuturesWs()
 
-	futuresWs.SubscribeDepth(goex.LTC_USDT, goex.SWAP_USDT_CONTRACT)
-	futuresWs.SubscribeDepth(goex.LTC_USDT, goex.SWAP_CONTRACT)
-	futuresWs.SubscribeDepth(goex.LTC_USDT, goex.QUARTER_CONTRACT)
+	futuresWs.SubscribeDepth(types.LTC_USDT, types.SWAP_USDT_CONTRACT)
+	futuresWs.SubscribeDepth(types.LTC_USDT, types.SWAP_CONTRACT)
+	futuresWs.SubscribeDepth(types.LTC_USDT, types.QUARTER_CONTRACT)
 
 	time.Sleep(30 * time.Second)
 }
@@ -37,9 +37,9 @@ func TestFuturesWs_DepthCallback(t *testing.T) {
 func TestFuturesWs_SubscribeTicker(t *testing.T) {
 	createFuturesWs()
 
-	futuresWs.SubscribeTicker(goex.BTC_USDT, goex.SWAP_USDT_CONTRACT)
-	futuresWs.SubscribeTicker(goex.BTC_USDT, goex.SWAP_CONTRACT)
-	futuresWs.SubscribeTicker(goex.BTC_USDT, goex.QUARTER_CONTRACT)
+	futuresWs.SubscribeTicker(types.BTC_USDT, types.SWAP_USDT_CONTRACT)
+	futuresWs.SubscribeTicker(types.BTC_USDT, types.SWAP_CONTRACT)
+	futuresWs.SubscribeTicker(types.BTC_USDT, types.QUARTER_CONTRACT)
 
 	time.Sleep(30 * time.Second)
 }

@@ -6,7 +6,10 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/fpChan/goex"
+	"github.com/fpChan/goex/common/api"
+	"github.com/fpChan/goex/common/exchange"
 	"github.com/fpChan/goex/internal/logger"
+	"github.com/fpChan/goex/types"
 	"strings"
 	"sync"
 	"time"
@@ -58,17 +61,17 @@ type DepthResponse struct {
 }
 
 type HbdmWs struct {
-	*WsBuilder
+	*api.WsBuilder
 	sync.Once
-	wsConn *WsConn
+	wsConn *api.WsConn
 
-	tickerCallback func(*FutureTicker)
-	depthCallback  func(*Depth)
-	tradeCallback  func(*Trade, string)
+	tickerCallback func(*types.FutureTicker)
+	depthCallback  func(*types.Depth)
+	tradeCallback  func(*types.Trade, string)
 }
 
 func NewHbdmWs() *HbdmWs {
-	hbdmWs := &HbdmWs{WsBuilder: NewWsBuilder()}
+	hbdmWs := &HbdmWs{WsBuilder: api.NewWsBuilder()}
 	hbdmWs.WsBuilder = hbdmWs.WsBuilder.
 		WsUrl("wss://api.hbdm.com/ws").
 		AutoReconnect().
@@ -80,26 +83,26 @@ func NewHbdmWs() *HbdmWs {
 	return hbdmWs
 }
 
-func (hbdmWs *HbdmWs) SetCallbacks(tickerCallback func(*FutureTicker),
-	depthCallback func(*Depth),
-	tradeCallback func(*Trade, string)) {
+func (hbdmWs *HbdmWs) SetCallbacks(tickerCallback func(*types.FutureTicker),
+	depthCallback func(*types.Depth),
+	tradeCallback func(*types.Trade, string)) {
 	hbdmWs.tickerCallback = tickerCallback
 	hbdmWs.depthCallback = depthCallback
 	hbdmWs.tradeCallback = tradeCallback
 }
 
-func (hbdmWs *HbdmWs) TickerCallback(call func(ticker *FutureTicker)) {
+func (hbdmWs *HbdmWs) TickerCallback(call func(ticker *types.FutureTicker)) {
 	hbdmWs.tickerCallback = call
 }
-func (hbdmWs *HbdmWs) TradeCallback(call func(trade *Trade, contract string)) {
+func (hbdmWs *HbdmWs) TradeCallback(call func(trade *types.Trade, contract string)) {
 	hbdmWs.tradeCallback = call
 }
 
-func (hbdmWs *HbdmWs) DepthCallback(call func(depth *Depth)) {
+func (hbdmWs *HbdmWs) DepthCallback(call func(depth *types.Depth)) {
 	hbdmWs.depthCallback = call
 }
 
-func (hbdmWs *HbdmWs) SubscribeTicker(pair CurrencyPair, contract string) error {
+func (hbdmWs *HbdmWs) SubscribeTicker(pair types.CurrencyPair, contract string) error {
 	if hbdmWs.tickerCallback == nil {
 		return errors.New("please set ticker callback func")
 	}
@@ -108,7 +111,7 @@ func (hbdmWs *HbdmWs) SubscribeTicker(pair CurrencyPair, contract string) error 
 		"sub": fmt.Sprintf("market.%s_%s.detail", pair.CurrencyA.Symbol, hbdmWs.adaptContractSymbol(contract))})
 }
 
-func (hbdmWs *HbdmWs) SubscribeDepth(pair CurrencyPair, contract string) error {
+func (hbdmWs *HbdmWs) SubscribeDepth(pair types.CurrencyPair, contract string) error {
 	if hbdmWs.depthCallback == nil {
 		return errors.New("please set depth callback func")
 	}
@@ -117,7 +120,7 @@ func (hbdmWs *HbdmWs) SubscribeDepth(pair CurrencyPair, contract string) error {
 		"sub": fmt.Sprintf("market.%s_%s.depth.size_20.high_freq", pair.CurrencyA.Symbol, hbdmWs.adaptContractSymbol(contract))})
 }
 
-func (hbdmWs *HbdmWs) SubscribeTrade(pair CurrencyPair, contract string) error {
+func (hbdmWs *HbdmWs) SubscribeTrade(pair types.CurrencyPair, contract string) error {
 	if hbdmWs.tradeCallback == nil {
 		return errors.New("please set trade callback func")
 	}
@@ -212,36 +215,36 @@ func (hbdmWs *HbdmWs) handle(msg []byte) error {
 	return nil
 }
 
-func (hbdmWs *HbdmWs) parseTicker(r DetailResponse) FutureTicker {
-	return FutureTicker{Ticker: &Ticker{High: r.High, Low: r.Low, Vol: r.Amount}}
+func (hbdmWs *HbdmWs) parseTicker(r DetailResponse) types.FutureTicker {
+	return types.FutureTicker{Ticker: &types.Ticker{High: r.High, Low: r.Low, Vol: r.Amount}}
 }
 
-func (hbdmWs *HbdmWs) parseCurrencyAndContract(ch string) (CurrencyPair, string, error) {
+func (hbdmWs *HbdmWs) parseCurrencyAndContract(ch string) (types.CurrencyPair, string, error) {
 	el := strings.Split(ch, ".")
 	if len(el) < 2 {
-		return UNKNOWN_PAIR, "", errors.New(ch)
+		return types.UNKNOWN_PAIR, "", errors.New(ch)
 	}
 	cs := strings.Split(el[1], "_")
 	contract := ""
 	switch cs[1] {
 	case "CQ":
-		contract = QUARTER_CONTRACT
+		contract = types.QUARTER_CONTRACT
 	case "NW":
-		contract = NEXT_WEEK_CONTRACT
+		contract = types.NEXT_WEEK_CONTRACT
 	case "CW":
-		contract = THIS_WEEK_CONTRACT
+		contract = types.THIS_WEEK_CONTRACT
 	}
-	return NewCurrencyPair(NewCurrency(cs[0], ""), USD), contract, nil
+	return types.NewCurrencyPair(types.NewCurrency(cs[0], ""), types.USD), contract, nil
 }
 
-func (hbdmWs *HbdmWs) parseTrade(r TradeResponse) []Trade {
-	var trades []Trade
+func (hbdmWs *HbdmWs) parseTrade(r TradeResponse) []types.Trade {
+	var trades []types.Trade
 	for _, v := range r.Data {
-		trades = append(trades, Trade{
+		trades = append(trades, types.Trade{
 			Tid:    v.Id,
 			Price:  v.Price,
 			Amount: v.Amount,
-			Type:   AdaptTradeSide(v.Direction),
+			Type:   exchange.AdaptTradeSide(v.Direction),
 			Date:   v.Ts})
 	}
 	return trades
@@ -250,11 +253,11 @@ func (hbdmWs *HbdmWs) parseTrade(r TradeResponse) []Trade {
 func (hbdmWs *HbdmWs) adaptContractSymbol(contract string) string {
 	//log.Println(contract)
 	switch contract {
-	case QUARTER_CONTRACT:
+	case types.QUARTER_CONTRACT:
 		return "CQ"
-	case NEXT_WEEK_CONTRACT:
+	case types.NEXT_WEEK_CONTRACT:
 		return "NW"
-	case THIS_WEEK_CONTRACT:
+	case types.THIS_WEEK_CONTRACT:
 		return "CW"
 	}
 	return ""

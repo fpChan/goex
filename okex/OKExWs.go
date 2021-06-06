@@ -3,7 +3,9 @@ package okex
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/internal/logger"
+	"github.com/fpChan/goex/types"
 	"strconv"
 	"strings"
 	"sync"
@@ -23,9 +25,9 @@ type wsResp struct {
 
 type OKExV3Ws struct {
 	base *OKEx
-	*WsBuilder
+	*api.WsBuilder
 	once       *sync.Once
-	WsConn     *WsConn
+	WsConn     *api.WsConn
 	respHandle func(channel string, data json.RawMessage) error
 }
 
@@ -35,7 +37,7 @@ func NewOKExV3Ws(base *OKEx, handle func(channel string, data json.RawMessage) e
 		base:       base,
 		respHandle: handle,
 	}
-	okV3Ws.WsBuilder = NewWsBuilder().
+	okV3Ws.WsBuilder = api.NewWsBuilder().
 		WsUrl("wss://real.okex.com:8443/ws/v3").
 		ReconnectInterval(time.Second).
 		AutoReconnect().
@@ -54,8 +56,8 @@ func (okV3Ws *OKExV3Ws) clearChan(c chan wsResp) {
 	}
 }
 
-func (okV3Ws *OKExV3Ws) getTablePrefix(currencyPair CurrencyPair, contractType string) string {
-	if contractType == SWAP_CONTRACT {
+func (okV3Ws *OKExV3Ws) getTablePrefix(currencyPair types.CurrencyPair, contractType string) string {
+	if contractType == types.SWAP_CONTRACT {
 		return "swap"
 	}
 	return "futures"

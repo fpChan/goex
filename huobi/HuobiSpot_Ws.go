@@ -6,25 +6,27 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/fpChan/goex"
+	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/internal/logger"
+	"github.com/fpChan/goex/types"
 	"strings"
 	"sync"
 	"time"
 )
 
 type SpotWs struct {
-	*WsBuilder
+	*api.WsBuilder
 	sync.Once
-	wsConn *WsConn
+	wsConn *api.WsConn
 
-	tickerCallback func(*Ticker)
-	depthCallback  func(*Depth)
-	tradeCallback  func(*Trade)
+	tickerCallback func(*types.Ticker)
+	depthCallback  func(*types.Depth)
+	tradeCallback  func(*types.Trade)
 }
 
 func NewSpotWs() *SpotWs {
 	ws := &SpotWs{
-		WsBuilder: NewWsBuilder(),
+		WsBuilder: api.NewWsBuilder(),
 	}
 	ws.WsBuilder = ws.WsBuilder.
 		WsUrl("wss://api.huobi.pro/ws").
@@ -34,14 +36,14 @@ func NewSpotWs() *SpotWs {
 	return ws
 }
 
-func (ws *SpotWs) DepthCallback(call func(depth *Depth)) {
+func (ws *SpotWs) DepthCallback(call func(depth *types.Depth)) {
 	ws.depthCallback = call
 }
 
-func (ws *SpotWs) TickerCallback(call func(ticker *Ticker)) {
+func (ws *SpotWs) TickerCallback(call func(ticker *types.Ticker)) {
 	ws.tickerCallback = call
 }
-func (ws *SpotWs) TradeCallback(call func(trade *Trade)) {
+func (ws *SpotWs) TradeCallback(call func(trade *types.Trade)) {
 	ws.tradeCallback = call
 }
 
@@ -56,7 +58,7 @@ func (ws *SpotWs) subscribe(sub map[string]interface{}) error {
 	return ws.wsConn.Subscribe(sub)
 }
 
-func (ws *SpotWs) SubscribeDepth(pair CurrencyPair) error {
+func (ws *SpotWs) SubscribeDepth(pair types.CurrencyPair) error {
 	if ws.depthCallback == nil {
 		return errors.New("please set depth callback func")
 	}
@@ -65,7 +67,7 @@ func (ws *SpotWs) SubscribeDepth(pair CurrencyPair) error {
 		"sub": fmt.Sprintf("market.%s.mbp.refresh.20", pair.ToLower().ToSymbol(""))})
 }
 
-func (ws *SpotWs) SubscribeTicker(pair CurrencyPair) error {
+func (ws *SpotWs) SubscribeTicker(pair types.CurrencyPair) error {
 	if ws.tickerCallback == nil {
 		return errors.New("please set ticker call back func")
 	}
@@ -76,7 +78,7 @@ func (ws *SpotWs) SubscribeTicker(pair CurrencyPair) error {
 	return nil
 }
 
-func (ws *SpotWs) SubscribeTrade(pair CurrencyPair) error {
+func (ws *SpotWs) SubscribeTrade(pair types.CurrencyPair) error {
 	return nil
 }
 
@@ -118,7 +120,7 @@ func (ws *SpotWs) handle(msg []byte) error {
 		if err != nil {
 			return err
 		}
-		ws.tickerCallback(&Ticker{
+		ws.tickerCallback(&types.Ticker{
 			Pair: currencyPair,
 			Last: tickerResp.Close,
 			High: tickerResp.High,

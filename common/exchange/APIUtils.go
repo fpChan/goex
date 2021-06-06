@@ -1,9 +1,10 @@
-package goex
+package exchange
 
 import (
 	"errors"
 	"fmt"
 	"github.com/fpChan/goex/internal/logger"
+	"github.com/fpChan/goex/types"
 	"reflect"
 	"time"
 )
@@ -67,7 +68,7 @@ _CALL:
 /**
  * call all unfinished orders
  */
-func CancelAllUnfinishedOrders(api API, currencyPair CurrencyPair) int {
+func CancelAllUnfinishedOrders(api API, currencyPair types.CurrencyPair) int {
 	if api == nil {
 		logger.Log.Error("api instance is nil ??? , please new a api instance")
 		return -1
@@ -87,7 +88,7 @@ func CancelAllUnfinishedOrders(api API, currencyPair CurrencyPair) int {
 			break
 		}
 
-		orders, isok := ret.([]Order)
+		orders, isok := ret.([]types.Order)
 		if !isok || len(orders) == 0 {
 			break
 		}
@@ -110,7 +111,7 @@ func CancelAllUnfinishedOrders(api API, currencyPair CurrencyPair) int {
  * call all unfinished future orders
  * @return c 成功撤单数量
  */
-func CancelAllUnfinishedFutureOrders(api FutureRestAPI, contractType string, currencyPair CurrencyPair) int {
+func CancelAllUnfinishedFutureOrders(api FutureRestAPI, contractType string, currencyPair types.CurrencyPair) int {
 	if api == nil {
 		logger.Log.Error("api instance is nil ??? , please new a api instance")
 		return 0
@@ -129,7 +130,7 @@ func CancelAllUnfinishedFutureOrders(api FutureRestAPI, contractType string, cur
 			break
 		}
 
-		orders, isOk := ret.([]FutureOrder)
+		orders, isOk := ret.([]types.FutureOrder)
 		if !isOk || len(orders) == 0 {
 			break
 		}

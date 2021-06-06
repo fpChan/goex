@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"github.com/fpChan/goex/types"
 	"github.com/google/uuid"
 	"io/ioutil"
 	"math"
@@ -114,7 +115,7 @@ func ValuesToJson(v url.Values) ([]byte, error) {
 	return json.Marshal(parammap)
 }
 
-func MergeOptionalParameter(values *url.Values, opts ...OptionalParameter) url.Values {
+func MergeOptionalParameter(values *url.Values, opts ...types.OptionalParameter) url.Values {
 	for _, opt := range opts {
 		for k, v := range opt {
 			values.Set(k, fmt.Sprint(v))

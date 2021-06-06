@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	. "github.com/fpChan/goex"
+	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/internal/logger"
+	"github.com/fpChan/goex/types"
 	"sort"
 	"sync"
 	"time"
@@ -43,23 +45,23 @@ type depthData struct {
 }
 
 type SwapWs struct {
-	c         *WsConn
+	c         *api.WsConn
 	once      sync.Once
-	wsBuilder *WsBuilder
+	wsBuilder *api.WsBuilder
 
-	depthCall  func(depth *Depth)
-	tickerCall func(ticker *FutureTicker)
+	depthCall  func(depth *types.Depth)
+	tickerCall func(ticker *types.FutureTicker)
 
-	tickerCacheMap map[string]FutureTicker
+	tickerCacheMap map[string]types.FutureTicker
 }
 
 func NewSwapWs() *SwapWs {
 	s := new(SwapWs)
-	s.wsBuilder = NewWsBuilder().DisableEnableCompression().WsUrl("wss://www.bitmex.com/realtime")
+	s.wsBuilder = api.NewWsBuilder().DisableEnableCompression().WsUrl("wss://www.bitmex.com/realtime")
 	s.wsBuilder = s.wsBuilder.Heartbeat(func() []byte { return []byte("ping") }, 5*time.Second)
 	s.wsBuilder = s.wsBuilder.ProtoHandleFunc(s.handle).AutoReconnect()
 	//s.c = wsBuilder.Build()
-	s.tickerCacheMap = make(map[string]FutureTicker, 10)
+	s.tickerCacheMap = make(map[string]types.FutureTicker, 10)
 	return s
 }
 
@@ -69,19 +71,19 @@ func (s *SwapWs) connect() {
 	})
 }
 
-func (s *SwapWs) DepthCallback(f func(depth *Depth)) {
+func (s *SwapWs) DepthCallback(f func(depth *types.Depth)) {
 	s.depthCall = f
 }
 
-func (s *SwapWs) TickerCallback(f func(ticker *FutureTicker)) {
+func (s *SwapWs) TickerCallback(f func(ticker *types.FutureTicker)) {
 	s.tickerCall = f
 }
 
-func (s *SwapWs) TradeCallback(f func(trade *Trade, contract string)) {
+func (s *SwapWs) TradeCallback(f func(trade *types.Trade, contract string)) {
 	panic("implement me")
 }
 
-func (s *SwapWs) SubscribeDepth(pair CurrencyPair, contractType string) error {
+func (s *SwapWs) SubscribeDepth(pair types.CurrencyPair, contractType string) error {
 	//{"op": "subscribe", "args": ["orderBook10:XBTUSD"]}
 	s.connect()
 
@@ -94,7 +96,7 @@ func (s *SwapWs) SubscribeDepth(pair CurrencyPair, contractType string) error {
 	return s.c.Subscribe(op)
 }
 
-func (s *SwapWs) SubscribeTicker(pair CurrencyPair, contractType string) error {
+func (s *SwapWs) SubscribeTicker(pair types.CurrencyPair, contractType string) error {
 	s.connect()
 
 	return s.c.Subscribe(SubscribeOp{
@@ -105,7 +107,7 @@ func (s *SwapWs) SubscribeTicker(pair CurrencyPair, contractType string) error {
 	})
 }
 
-func (s *SwapWs) SubscribeTrade(pair CurrencyPair, contractType string) error {
+func (s *SwapWs) SubscribeTrade(pair types.CurrencyPair, contractType string) error {
 	panic("implement me")
 }
 
@@ -129,7 +131,7 @@ func (s *SwapWs) handle(data []byte) error {
 
 		var (
 			depthData []depthData
-			dep       Depth
+			dep       types.Depth
 		)
 
 		err = json.Unmarshal(msg.Data, &depthData)
@@ -147,14 +149,14 @@ func (s *SwapWs) handle(data []byte) error {
 		dep.Pair, dep.ContractType = AdaptWsSymbol(depthData[0].Symbol)
 
 		for _, item := range depthData[0].Bids {
-			dep.BidList = append(dep.BidList, DepthRecord{
+			dep.BidList = append(dep.BidList, types.DepthRecord{
 				Price:  ToFloat64(item[0]),
 				Amount: ToFloat64(item[1]),
 			})
 		}
 
 		for _, item := range depthData[0].Asks {
-			dep.AskList = append(dep.AskList, DepthRecord{
+			dep.AskList = append(dep.AskList, types.DepthRecord{
 				Price:  ToFloat64(item[0]),
 				Amount: ToFloat64(item[1]),
 			})
@@ -174,7 +176,7 @@ func (s *SwapWs) handle(data []byte) error {
 
 		if msg.Action == "partial" {
 			ticker := s.tickerCacheMap[tickerData[0].Symbol]
-			ticker.Ticker = new(Ticker)
+			ticker.Ticker = new(types.Ticker)
 			ticker.Pair, ticker.ContractType = AdaptWsSymbol(tickerData[0].Symbol)
 			ticker.Vol = tickerData[0].HomeNotional24h
 			ticker.Last = tickerData[0].LastPrice

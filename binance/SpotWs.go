@@ -4,7 +4,9 @@ import (
 	json2 "encoding/json"
 	"fmt"
 	"github.com/fpChan/goex"
+	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/internal/logger"
+	"github.com/fpChan/goex/types"
 	"os"
 	"sort"
 	"strings"
@@ -30,22 +32,22 @@ type depthResp struct {
 }
 
 type SpotWs struct {
-	c         *goex.WsConn
+	c         *api.WsConn
 	once      sync.Once
-	wsBuilder *goex.WsBuilder
+	wsBuilder *api.WsBuilder
 
 	reqId int
 
-	depthCallFn  func(depth *goex.Depth)
-	tickerCallFn func(ticker *goex.Ticker)
-	tradeCallFn  func(trade *goex.Trade)
+	depthCallFn  func(depth *types.Depth)
+	tickerCallFn func(ticker *types.Ticker)
+	tradeCallFn  func(trade *types.Trade)
 }
 
 func NewSpotWs() *SpotWs {
 	spotWs := &SpotWs{}
 	logger.Debugf("proxy url: %s", os.Getenv("HTTPS_PROXY"))
 
-	spotWs.wsBuilder = goex.NewWsBuilder().
+	spotWs.wsBuilder = api.NewWsBuilder().
 		WsUrl("wss://stream.binance.com:9443/stream?streams=depth/miniTicker/ticker/trade").
 		ProxyUrl(os.Getenv("HTTPS_PROXY")).
 		ProtoHandleFunc(spotWs.handle).AutoReconnect()
@@ -61,19 +63,19 @@ func (s *SpotWs) connect() {
 	})
 }
 
-func (s *SpotWs) DepthCallback(f func(depth *goex.Depth)) {
+func (s *SpotWs) DepthCallback(f func(depth *types.Depth)) {
 	s.depthCallFn = f
 }
 
-func (s *SpotWs) TickerCallback(f func(ticker *goex.Ticker)) {
+func (s *SpotWs) TickerCallback(f func(ticker *types.Ticker)) {
 	s.tickerCallFn = f
 }
 
-func (s *SpotWs) TradeCallback(f func(trade *goex.Trade)) {
+func (s *SpotWs) TradeCallback(f func(trade *types.Trade)) {
 	s.tradeCallFn = f
 }
 
-func (s *SpotWs) SubscribeDepth(pair goex.CurrencyPair) error {
+func (s *SpotWs) SubscribeDepth(pair types.CurrencyPair) error {
 	defer func() {
 		s.reqId++
 	}()
@@ -89,7 +91,7 @@ func (s *SpotWs) SubscribeDepth(pair goex.CurrencyPair) error {
 	})
 }
 
-func (s *SpotWs) SubscribeTicker(pair goex.CurrencyPair) error {
+func (s *SpotWs) SubscribeTicker(pair types.CurrencyPair) error {
 	defer func() {
 		s.reqId++
 	}()
@@ -103,7 +105,7 @@ func (s *SpotWs) SubscribeTicker(pair goex.CurrencyPair) error {
 	})
 }
 
-func (s *SpotWs) SubscribeTrade(pair goex.CurrencyPair) error {
+func (s *SpotWs) SubscribeTrade(pair types.CurrencyPair) error {
 	panic("implement me")
 }
 
@@ -128,10 +130,10 @@ func (s *SpotWs) handle(data []byte) error {
 	return nil
 }
 
-func (s *SpotWs) depthHandle(data json2.RawMessage, pair goex.CurrencyPair) error {
+func (s *SpotWs) depthHandle(data json2.RawMessage, pair types.CurrencyPair) error {
 	var (
 		depthR depthResp
-		dep    goex.Depth
+		dep    types.Depth
 		err    error
 	)
 
@@ -145,14 +147,14 @@ func (s *SpotWs) depthHandle(data json2.RawMessage, pair goex.CurrencyPair) erro
 	dep.Pair = pair
 
 	for _, bid := range depthR.Bids {
-		dep.BidList = append(dep.BidList, goex.DepthRecord{
+		dep.BidList = append(dep.BidList, types.DepthRecord{
 			Price:  goex.ToFloat64(bid[0]),
 			Amount: goex.ToFloat64(bid[1]),
 		})
 	}
 
 	for _, ask := range depthR.Asks {
-		dep.AskList = append(dep.AskList, goex.DepthRecord{
+		dep.AskList = append(dep.AskList, types.DepthRecord{
 			Price:  goex.ToFloat64(ask[0]),
 			Amount: goex.ToFloat64(ask[1]),
 		})
@@ -165,10 +167,10 @@ func (s *SpotWs) depthHandle(data json2.RawMessage, pair goex.CurrencyPair) erro
 	return nil
 }
 
-func (s *SpotWs) tickerHandle(data json2.RawMessage, pair goex.CurrencyPair) error {
+func (s *SpotWs) tickerHandle(data json2.RawMessage, pair types.CurrencyPair) error {
 	var (
 		tickerData = make(map[string]interface{}, 4)
-		ticker     goex.Ticker
+		ticker     types.Ticker
 	)
 
 	err := json2.Unmarshal(data, &tickerData)

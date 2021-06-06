@@ -1,8 +1,8 @@
 package bitmex
 
 import (
-	"github.com/fpChan/goex"
 	"github.com/fpChan/goex/internal/logger"
+	"github.com/fpChan/goex/types"
 	"github.com/stretchr/testify/assert"
 	"net"
 	"net/http"
@@ -27,7 +27,7 @@ var httpProxyClient = &http.Client{
 
 func init() {
 	logger.Log.SetLevel(logger.DEBUG)
-	mex = New(&goex.APIConfig{
+	mex = New(&types.APIConfig{
 		Endpoint:   "https://testnet.bitmex.com/",
 		HttpClient: httpProxyClient,
 	})
@@ -36,14 +36,14 @@ func init() {
 var mex *bitmex
 
 func TestBitmex_GetFutureDepth(t *testing.T) {
-	dep, err := mex.GetFutureDepth(goex.ETH_USDT, goex.SWAP_CONTRACT, 5)
+	dep, err := mex.GetFutureDepth(types.ETH_USDT, types.SWAP_CONTRACT, 5)
 	assert.Nil(t, err)
 	t.Log(dep.AskList)
 	t.Log(dep.BidList)
 }
 
 func TestBitmex_GetFutureTicker(t *testing.T) {
-	tk, er := mex.GetFutureTicker(goex.BTC_USD, "")
+	tk, er := mex.GetFutureTicker(types.BTC_USD, "")
 	if assert.Nil(t, er) {
 		t.Logf("buy:%.8f ,sell: %.8f ,Last:%.8f , vol:%.8f", tk.Buy, tk.Sell, tk.Last, tk.Vol)
 	}
@@ -60,30 +60,30 @@ func TestBitmex_GetIndicativeFundingRate(t *testing.T) {
 func TestBitmex_GetFutureUserinfo(t *testing.T) {
 	userinfo, err := mex.GetFutureUserinfo()
 	if assert.Nil(t, err) {
-		t.Logf("%.8f", userinfo.FutureSubAccounts[goex.BTC].AccountRights)
-		t.Logf("%.8f", userinfo.FutureSubAccounts[goex.BTC].KeepDeposit)
-		t.Logf("%.8f", userinfo.FutureSubAccounts[goex.BTC].ProfitReal)
-		t.Logf("%.8f", userinfo.FutureSubAccounts[goex.BTC].ProfitUnreal)
+		t.Logf("%.8f", userinfo.FutureSubAccounts[types.BTC].AccountRights)
+		t.Logf("%.8f", userinfo.FutureSubAccounts[types.BTC].KeepDeposit)
+		t.Logf("%.8f", userinfo.FutureSubAccounts[types.BTC].ProfitReal)
+		t.Logf("%.8f", userinfo.FutureSubAccounts[types.BTC].ProfitUnreal)
 	}
 }
 
 func TestBitmex_GetFuturePosition(t *testing.T) {
-	t.Log(mex.GetFuturePosition(goex.BTC_USD, ""))
+	t.Log(mex.GetFuturePosition(types.BTC_USD, ""))
 }
 
 func TestBitmex_PlaceFutureOrder(t *testing.T) {
 	//{"orderID":"ae0436f4-9229-0be1-e9ea-45073a2a404a","clOrdID":"goexba0c770d9cea445eafb12b95fe220a0f"
-	t.Log(mex.PlaceFutureOrder(goex.BTC_USD, goex.SWAP_CONTRACT, "9999", "2", goex.CLOSE_SELL, 0, 10))
+	t.Log(mex.PlaceFutureOrder(types.BTC_USD, types.SWAP_CONTRACT, "9999", "2", types.CLOSE_SELL, 0, 10))
 }
 
 func TestBitmex_GetUnfinishFutureOrders(t *testing.T) {
-	t.Log(mex.GetUnfinishFutureOrders(goex.BTC_USD, goex.SWAP_CONTRACT))
+	t.Log(mex.GetUnfinishFutureOrders(types.BTC_USD, types.SWAP_CONTRACT))
 }
 
 func TestBitmex_GetFutureOrder(t *testing.T) {
-	t.Log(mex.GetFutureOrder("ae0436f4-9229-0be1-e9ea-45073a2a404a", goex.BTC_USD, goex.SWAP_CONTRACT))
+	t.Log(mex.GetFutureOrder("ae0436f4-9229-0be1-e9ea-45073a2a404a", types.BTC_USD, types.SWAP_CONTRACT))
 }
 
 func TestBitmex_FutureCancelOrder(t *testing.T) {
-	t.Log(mex.FutureCancelOrder(goex.BTC_USD, goex.SWAP_CONTRACT, "goexfd6fd7694877448e8ae81a9cd7ecd89a"))
+	t.Log(mex.FutureCancelOrder(types.BTC_USD, types.SWAP_CONTRACT, "goexfd6fd7694877448e8ae81a9cd7ecd89a"))
 }

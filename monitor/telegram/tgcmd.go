@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/fpChan/goex"
 	"github.com/fpChan/goex/monitor"
 	"github.com/fpChan/goex/okex"
+	"github.com/fpChan/goex/types"
 	"net/http"
 	"net/url"
 )
@@ -35,14 +35,14 @@ func main() {
 	}
 
 	var monitorTool monitor.Monitor
-	var okEx = okex.NewOKEx(&goex.APIConfig{
+	var okEx = okex.NewOKEx(&types.APIConfig{
 		Endpoint:      okexURL,
 		HttpClient:    client,
 		ApiKey:        "",
 		ApiSecretKey:  "",
 		ApiPassphrase: "",
 	})
-	var symbols = []goex.CurrencyPair{goex.SHIB_USDT, goex.SUSHI_USDT, goex.UNI_USDT, goex.LINCH_USDT, goex.KSM_USDT, goex.MATIC_USDT, goex.THETA_USDT, goex.BTC_USDT, goex.ETH_USD}
+	var symbols = []types.CurrencyPair{types.SHIB_USDT, types.SUSHI_USDT, types.UNI_USDT, types.LINCH_USDT, types.KSM_USDT, types.MATIC_USDT, types.THETA_USDT, types.BTC_USDT, types.ETH_USD}
 	monitorTool = monitor.NewTelegramMonitor(okEx.OKExFuture, tgURL, tgChatID, proxyScheme, proxyHost, symbols)
 	if err := monitorTool.Start(); err != nil {
 		return

@@ -3,6 +3,7 @@ package huobi
 import (
 	"github.com/fpChan/goex"
 	"github.com/fpChan/goex/internal/logger"
+	"github.com/fpChan/goex/types"
 	"github.com/stretchr/testify/assert"
 	"net"
 	"net/http"
@@ -45,7 +46,7 @@ func TestHuobiPro_GetTicker(t *testing.T) {
 }
 
 func TestHuobiPro_GetDepth(t *testing.T) {
-	dep, err := hbpro.GetDepth(2, goex.LTC_USDT)
+	dep, err := hbpro.GetDepth(2, types.LTC_USDT)
 	assert.Nil(t, err)
 	t.Log(dep.AskList)
 	t.Log(dep.BidList)
@@ -104,29 +105,29 @@ func TestHuobiPro_MarketBuy(t *testing.T) {
 
 func TestHuobiPro_GetUnfinishOrders(t *testing.T) {
 	return
-	ords, err := hbpro.GetUnfinishOrders(goex.ETC_USDT)
+	ords, err := hbpro.GetUnfinishOrders(types.ETC_USDT)
 	assert.Nil(t, err)
 	t.Log(ords)
 }
 
 func TestHuobiPro_CancelOrder(t *testing.T) {
 	return
-	r, err := hbpro.CancelOrder("600329873", goex.ETH_USDT)
+	r, err := hbpro.CancelOrder("600329873", types.ETH_USDT)
 	assert.Nil(t, err)
 	t.Log(r)
 	t.Log(err)
 }
 
 func TestHuobiPro_GetOneOrder(t *testing.T) {
-	ord, err := hbpro.GetOneOrder("165062634284339", goex.BTC_USDT)
+	ord, err := hbpro.GetOneOrder("165062634284339", types.BTC_USDT)
 	assert.Nil(t, err)
 	t.Log(ord)
 }
 
 func TestHuobiPro_GetOrderHistorys(t *testing.T) {
 	ords, err := hbpro.GetOrderHistorys(
-		goex.NewCurrencyPair2("BTC_USDT"),
-		goex.OptionalParameter{}.Optional("start-date", "2020-11-30"))
+		types.NewCurrencyPair2("BTC_USDT"),
+		types.OptionalParameter{}.Optional("start-date", "2020-11-30"))
 	t.Log(err)
 	t.Log(ords)
 }

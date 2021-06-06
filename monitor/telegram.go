@@ -2,7 +2,8 @@ package monitor
 
 import (
 	"fmt"
-	"github.com/fpChan/goex"
+	exchange2 "github.com/fpChan/goex/common/exchange"
+	"github.com/fpChan/goex/types"
 	"log"
 	"net/http"
 	"net/url"
@@ -13,12 +14,12 @@ type TelegramMonitor struct {
 	tgURL         string
 	chatid        string
 	httpClient    *http.Client
-	futureClient  goex.ExpandFutureRestAPI
-	targetSymbols []goex.CurrencyPair
+	futureClient  exchange2.ExpandFutureRestAPI
+	targetSymbols []types.CurrencyPair
 	msgCh         chan string
 }
 
-func NewTelegramMonitor(futureClient goex.ExpandFutureRestAPI, tgURL, chatid, proxyScheme, proxyHost string, targetSymbols []goex.CurrencyPair) TelegramMonitor {
+func NewTelegramMonitor(futureClient exchange2.ExpandFutureRestAPI, tgURL, chatid, proxyScheme, proxyHost string, targetSymbols []types.CurrencyPair) TelegramMonitor {
 	var client = &http.Client{
 		Transport: &http.Transport{},
 	}
@@ -57,7 +58,7 @@ func (tgMonitor TelegramMonitor) Start() error {
 		case <-time.After(30 * time.Second):
 			var msg = ""
 			for _, symbol := range tgMonitor.targetSymbols {
-				candles, err := tgMonitor.futureClient.GetKlineRecords(goex.SWAP_CONTRACT, symbol, goex.KLINE_PERIOD_1MIN, 0)
+				candles, err := tgMonitor.futureClient.GetKlineRecords(types.SWAP_CONTRACT, symbol, types.KLINE_PERIOD_1MIN, 0)
 				if err != nil {
 					log.Fatal(fmt.Sprintf("failed to get future %s ticker by", symbol), err)
 				}

@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/fpChan/goex"
+	"github.com/fpChan/goex/common/api"
+	"github.com/fpChan/goex/common/exchange"
+	"github.com/fpChan/goex/types"
 	"net/http"
 	"net/url"
 	"sort"
@@ -30,23 +33,23 @@ const (
 	SERVER_TIME_URL        = "time"
 )
 
-var _INERNAL_KLINE_PERIOD_CONVERTER = map[KlinePeriod]string{
-	KLINE_PERIOD_1MIN:   "1m",
-	KLINE_PERIOD_3MIN:   "3m",
-	KLINE_PERIOD_5MIN:   "5m",
-	KLINE_PERIOD_15MIN:  "15m",
-	KLINE_PERIOD_30MIN:  "30m",
-	KLINE_PERIOD_60MIN:  "1h",
-	KLINE_PERIOD_1H:     "1h",
-	KLINE_PERIOD_2H:     "2h",
-	KLINE_PERIOD_4H:     "4h",
-	KLINE_PERIOD_6H:     "6h",
-	KLINE_PERIOD_8H:     "8h",
-	KLINE_PERIOD_12H:    "12h",
-	KLINE_PERIOD_1DAY:   "1d",
-	KLINE_PERIOD_3DAY:   "3d",
-	KLINE_PERIOD_1WEEK:  "1w",
-	KLINE_PERIOD_1MONTH: "1M",
+var _INERNAL_KLINE_PERIOD_CONVERTER = map[types.KlinePeriod]string{
+	types.KLINE_PERIOD_1MIN:   "1m",
+	types.KLINE_PERIOD_3MIN:   "3m",
+	types.KLINE_PERIOD_5MIN:   "5m",
+	types.KLINE_PERIOD_15MIN:  "15m",
+	types.KLINE_PERIOD_30MIN:  "30m",
+	types.KLINE_PERIOD_60MIN:  "1h",
+	types.KLINE_PERIOD_1H:     "1h",
+	types.KLINE_PERIOD_2H:     "2h",
+	types.KLINE_PERIOD_4H:     "4h",
+	types.KLINE_PERIOD_6H:     "6h",
+	types.KLINE_PERIOD_8H:     "8h",
+	types.KLINE_PERIOD_12H:    "12h",
+	types.KLINE_PERIOD_1DAY:   "1d",
+	types.KLINE_PERIOD_3DAY:   "3d",
+	types.KLINE_PERIOD_1WEEK:  "1w",
+	types.KLINE_PERIOD_1MONTH: "1M",
 }
 
 type Filter struct {
@@ -178,14 +181,14 @@ func (bn *Binance) buildParamsSigned(postForm *url.Values) error {
 }
 
 func New(client *http.Client, api_key, secret_key string) *Binance {
-	return NewWithConfig(&APIConfig{
+	return NewWithConfig(&types.APIConfig{
 		HttpClient:   client,
 		Endpoint:     GLOBAL_API_BASE_URL,
 		ApiKey:       api_key,
 		ApiSecretKey: secret_key})
 }
 
-func NewWithConfig(config *APIConfig) *Binance {
+func NewWithConfig(config *types.APIConfig) *Binance {
 	if config.Endpoint == "" {
 		config.Endpoint = GLOBAL_API_BASE_URL
 	}
@@ -202,11 +205,11 @@ func NewWithConfig(config *APIConfig) *Binance {
 }
 
 func (bn *Binance) GetExchangeName() string {
-	return BINANCE
+	return types.BINANCE
 }
 
 func (bn *Binance) Ping() bool {
-	_, err := HttpGet(bn.httpClient, bn.apiV3+"ping")
+	_, err := api.HttpGet(bn.httpClient, bn.apiV3+"ping")
 	if err != nil {
 		return false
 	}
@@ -214,7 +217,7 @@ func (bn *Binance) Ping() bool {
 }
 
 func (bn *Binance) setTimeOffset() error {
-	respmap, err := HttpGet(bn.httpClient, bn.apiV3+SERVER_TIME_URL)
+	respmap, err := api.HttpGet(bn.httpClient, bn.apiV3+SERVER_TIME_URL)
 	if err != nil {
 		return err
 	}
@@ -227,15 +230,15 @@ func (bn *Binance) setTimeOffset() error {
 	return nil
 }
 
-func (bn *Binance) GetTicker(currency CurrencyPair) (*Ticker, error) {
+func (bn *Binance) GetTicker(currency types.CurrencyPair) (*types.Ticker, error) {
 	tickerUri := bn.apiV3 + fmt.Sprintf(TICKER_URI, currency.ToSymbol(""))
-	tickerMap, err := HttpGet(bn.httpClient, tickerUri)
+	tickerMap, err := api.HttpGet(bn.httpClient, tickerUri)
 
 	if err != nil {
 		return nil, err
 	}
 
-	var ticker Ticker
+	var ticker types.Ticker
 	ticker.Pair = currency
 	t, _ := tickerMap["closeTime"].(float64)
 	ticker.Date = uint64(t / 1000)
@@ -248,7 +251,7 @@ func (bn *Binance) GetTicker(currency CurrencyPair) (*Ticker, error) {
 	return &ticker, nil
 }
 
-func (bn *Binance) GetDepth(size int, currencyPair CurrencyPair) (*Depth, error) {
+func (bn *Binance) GetDepth(size int, currencyPair types.CurrencyPair) (*types.Depth, error) {
 	if size <= 5 {
 		size = 5
 	} else if size <= 10 {
@@ -266,7 +269,7 @@ func (bn *Binance) GetDepth(size int, currencyPair CurrencyPair) (*Depth, error)
 	}
 
 	apiUrl := fmt.Sprintf(bn.apiV3+DEPTH_URI, currencyPair.ToSymbol(""), size)
-	resp, err := HttpGet(bn.httpClient, apiUrl)
+	resp, err := api.HttpGet(bn.httpClient, apiUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +281,7 @@ func (bn *Binance) GetDepth(size int, currencyPair CurrencyPair) (*Depth, error)
 	bids := resp["bids"].([]interface{})
 	asks := resp["asks"].([]interface{})
 
-	depth := new(Depth)
+	depth := new(types.Depth)
 	depth.Pair = currencyPair
 	depth.UTime = time.Now()
 	n := 0
@@ -286,7 +289,7 @@ func (bn *Binance) GetDepth(size int, currencyPair CurrencyPair) (*Depth, error)
 		_bid := bid.([]interface{})
 		amount := ToFloat64(_bid[1])
 		price := ToFloat64(_bid[0])
-		dr := DepthRecord{Amount: amount, Price: price}
+		dr := types.DepthRecord{Amount: amount, Price: price}
 		depth.BidList = append(depth.BidList, dr)
 		n++
 		if n == size {
@@ -299,7 +302,7 @@ func (bn *Binance) GetDepth(size int, currencyPair CurrencyPair) (*Depth, error)
 		_ask := ask.([]interface{})
 		amount := ToFloat64(_ask[1])
 		price := ToFloat64(_ask[0])
-		dr := DepthRecord{Amount: amount, Price: price}
+		dr := types.DepthRecord{Amount: amount, Price: price}
 		depth.AskList = append(depth.AskList, dr)
 		n++
 		if n == size {
@@ -312,7 +315,7 @@ func (bn *Binance) GetDepth(size int, currencyPair CurrencyPair) (*Depth, error)
 	return depth, nil
 }
 
-func (bn *Binance) placeOrder(amount, price string, pair CurrencyPair, orderType, orderSide string) (*Order, error) {
+func (bn *Binance) placeOrder(amount, price string, pair types.CurrencyPair, orderType, orderSide string) (*types.Order, error) {
 	path := bn.apiV3 + ORDER_URI
 	params := url.Values{}
 	params.Set("symbol", pair.ToSymbol(""))
@@ -331,7 +334,7 @@ func (bn *Binance) placeOrder(amount, price string, pair CurrencyPair, orderType
 
 	bn.buildParamsSigned(&params)
 
-	resp, err := HttpPostForm2(bn.httpClient, path, params,
+	resp, err := api.HttpPostForm2(bn.httpClient, path, params,
 		map[string]string{"X-MBX-APIKEY": bn.accessKey})
 	if err != nil {
 		return nil, err
@@ -348,9 +351,9 @@ func (bn *Binance) placeOrder(amount, price string, pair CurrencyPair, orderType
 		return nil, errors.New(string(resp))
 	}
 
-	side := BUY
+	side := types.BUY
 	if orderSide == "SELL" {
-		side = SELL
+		side = types.SELL
 	}
 
 	dealAmount := ToFloat64(respmap["executedQty"])
@@ -360,7 +363,7 @@ func (bn *Binance) placeOrder(amount, price string, pair CurrencyPair, orderType
 		avgPrice = cummulativeQuoteQty / dealAmount
 	}
 
-	return &Order{
+	return &types.Order{
 		Currency:   pair,
 		OrderID:    orderId,
 		OrderID2:   strconv.Itoa(orderId),
@@ -368,31 +371,31 @@ func (bn *Binance) placeOrder(amount, price string, pair CurrencyPair, orderType
 		Amount:     ToFloat64(amount),
 		DealAmount: dealAmount,
 		AvgPrice:   avgPrice,
-		Side:       TradeSide(side),
-		Status:     ORDER_UNFINISH,
+		Side:       types.TradeSide(side),
+		Status:     types.ORDER_UNFINISH,
 		OrderTime:  ToInt(respmap["transactTime"])}, nil
 }
 
-func (bn *Binance) GetAccount() (*Account, error) {
+func (bn *Binance) GetAccount() (*types.Account, error) {
 	params := url.Values{}
 	bn.buildParamsSigned(&params)
 	path := bn.apiV3 + ACCOUNT_URI + params.Encode()
-	respmap, err := HttpGet2(bn.httpClient, path, map[string]string{"X-MBX-APIKEY": bn.accessKey})
+	respmap, err := api.HttpGet2(bn.httpClient, path, map[string]string{"X-MBX-APIKEY": bn.accessKey})
 	if err != nil {
 		return nil, err
 	}
 	if _, isok := respmap["code"]; isok == true {
 		return nil, errors.New(respmap["msg"].(string))
 	}
-	acc := Account{}
+	acc := types.Account{}
 	acc.Exchange = bn.GetExchangeName()
-	acc.SubAccounts = make(map[Currency]SubAccount)
+	acc.SubAccounts = make(map[types.Currency]types.SubAccount)
 
 	balances := respmap["balances"].([]interface{})
 	for _, v := range balances {
 		vv := v.(map[string]interface{})
-		currency := NewCurrency(vv["asset"].(string), "").AdaptBccToBch()
-		acc.SubAccounts[currency] = SubAccount{
+		currency := types.NewCurrency(vv["asset"].(string), "").AdaptBccToBch()
+		acc.SubAccounts[currency] = types.SubAccount{
 			Currency:     currency,
 			Amount:       ToFloat64(vv["free"]),
 			ForzenAmount: ToFloat64(vv["locked"]),
@@ -402,23 +405,23 @@ func (bn *Binance) GetAccount() (*Account, error) {
 	return &acc, nil
 }
 
-func (bn *Binance) LimitBuy(amount, price string, currencyPair CurrencyPair, opt ...LimitOrderOptionalParameter) (*Order, error) {
+func (bn *Binance) LimitBuy(amount, price string, currencyPair types.CurrencyPair, opt ...types.LimitOrderOptionalParameter) (*types.Order, error) {
 	return bn.placeOrder(amount, price, currencyPair, "LIMIT", "BUY")
 }
 
-func (bn *Binance) LimitSell(amount, price string, currencyPair CurrencyPair, opt ...LimitOrderOptionalParameter) (*Order, error) {
+func (bn *Binance) LimitSell(amount, price string, currencyPair types.CurrencyPair, opt ...types.LimitOrderOptionalParameter) (*types.Order, error) {
 	return bn.placeOrder(amount, price, currencyPair, "LIMIT", "SELL")
 }
 
-func (bn *Binance) MarketBuy(amount, price string, currencyPair CurrencyPair) (*Order, error) {
+func (bn *Binance) MarketBuy(amount, price string, currencyPair types.CurrencyPair) (*types.Order, error) {
 	return bn.placeOrder(amount, price, currencyPair, "MARKET", "BUY")
 }
 
-func (bn *Binance) MarketSell(amount, price string, currencyPair CurrencyPair) (*Order, error) {
+func (bn *Binance) MarketSell(amount, price string, currencyPair types.CurrencyPair) (*types.Order, error) {
 	return bn.placeOrder(amount, price, currencyPair, "MARKET", "SELL")
 }
 
-func (bn *Binance) CancelOrder(orderId string, currencyPair CurrencyPair) (bool, error) {
+func (bn *Binance) CancelOrder(orderId string, currencyPair types.CurrencyPair) (bool, error) {
 	path := bn.apiV3 + ORDER_URI
 	params := url.Values{}
 	params.Set("symbol", currencyPair.ToSymbol(""))
@@ -426,7 +429,7 @@ func (bn *Binance) CancelOrder(orderId string, currencyPair CurrencyPair) (bool,
 
 	bn.buildParamsSigned(&params)
 
-	resp, err := HttpDeleteForm(bn.httpClient, path, params, map[string]string{"X-MBX-APIKEY": bn.accessKey})
+	resp, err := api.HttpDeleteForm(bn.httpClient, path, params, map[string]string{"X-MBX-APIKEY": bn.accessKey})
 
 	if err != nil {
 		return false, bn.adaptError(err)
@@ -446,7 +449,7 @@ func (bn *Binance) CancelOrder(orderId string, currencyPair CurrencyPair) (bool,
 	return true, nil
 }
 
-func (bn *Binance) GetOneOrder(orderId string, currencyPair CurrencyPair) (*Order, error) {
+func (bn *Binance) GetOneOrder(orderId string, currencyPair types.CurrencyPair) (*types.Order, error) {
 	params := url.Values{}
 	params.Set("symbol", currencyPair.ToSymbol(""))
 	if orderId != "" {
@@ -457,7 +460,7 @@ func (bn *Binance) GetOneOrder(orderId string, currencyPair CurrencyPair) (*Orde
 	bn.buildParamsSigned(&params)
 	path := bn.apiV3 + ORDER_URI + "?" + params.Encode()
 
-	respmap, err := HttpGet2(bn.httpClient, path, map[string]string{"X-MBX-APIKEY": bn.accessKey})
+	respmap, err := api.HttpGet2(bn.httpClient, path, map[string]string{"X-MBX-APIKEY": bn.accessKey})
 	if err != nil {
 		return nil, err
 	}
@@ -467,19 +470,19 @@ func (bn *Binance) GetOneOrder(orderId string, currencyPair CurrencyPair) (*Orde
 	return &order, nil
 }
 
-func (bn *Binance) GetUnfinishOrders(currencyPair CurrencyPair) ([]Order, error) {
+func (bn *Binance) GetUnfinishOrders(currencyPair types.CurrencyPair) ([]types.Order, error) {
 	params := url.Values{}
 	params.Set("symbol", currencyPair.ToSymbol(""))
 
 	bn.buildParamsSigned(&params)
 	path := bn.apiV3 + UNFINISHED_ORDERS_INFO + params.Encode()
 
-	respmap, err := HttpGet3(bn.httpClient, path, map[string]string{"X-MBX-APIKEY": bn.accessKey})
+	respmap, err := api.HttpGet3(bn.httpClient, path, map[string]string{"X-MBX-APIKEY": bn.accessKey})
 	if err != nil {
 		return nil, err
 	}
 
-	orders := make([]Order, 0)
+	orders := make([]types.Order, 0)
 	for _, v := range respmap {
 		ord := v.(map[string]interface{})
 		orders = append(orders, bn.adaptOrder(currencyPair, ord))
@@ -488,7 +491,7 @@ func (bn *Binance) GetUnfinishOrders(currencyPair CurrencyPair) ([]Order, error)
 	return orders, nil
 }
 
-func (bn *Binance) GetKlineRecords(currency CurrencyPair, period KlinePeriod, size int, optional ...OptionalParameter) ([]Kline, error) {
+func (bn *Binance) GetKlineRecords(currency types.CurrencyPair, period types.KlinePeriod, size int, optional ...types.OptionalParameter) ([]types.Kline, error) {
 	params := url.Values{}
 	params.Set("symbol", currency.ToSymbol(""))
 	params.Set("interval", _INERNAL_KLINE_PERIOD_CONVERTER[period])
@@ -496,14 +499,14 @@ func (bn *Binance) GetKlineRecords(currency CurrencyPair, period KlinePeriod, si
 	MergeOptionalParameter(&params, optional...)
 
 	klineUrl := bn.apiV3 + KLINE_URI + "?" + params.Encode()
-	klines, err := HttpGet3(bn.httpClient, klineUrl, nil)
+	klines, err := api.HttpGet3(bn.httpClient, klineUrl, nil)
 	if err != nil {
 		return nil, err
 	}
-	var klineRecords []Kline
+	var klineRecords []types.Kline
 
 	for _, _record := range klines {
-		r := Kline{Pair: currency}
+		r := types.Kline{Pair: currency}
 		record := _record.([]interface{})
 		r.Timestamp = int64(record[0].(float64)) / 1000 //to unix timestramp
 		r.Open = ToFloat64(record[1])
@@ -521,7 +524,7 @@ func (bn *Binance) GetKlineRecords(currency CurrencyPair, period KlinePeriod, si
 
 //非个人，整个交易所的交易记录
 //注意：since is fromId
-func (bn *Binance) GetTrades(currencyPair CurrencyPair, since int64) ([]Trade, error) {
+func (bn *Binance) GetTrades(currencyPair types.CurrencyPair, since int64) ([]types.Trade, error) {
 	param := url.Values{}
 	param.Set("symbol", currencyPair.ToSymbol(""))
 	param.Set("limit", "500")
@@ -529,20 +532,20 @@ func (bn *Binance) GetTrades(currencyPair CurrencyPair, since int64) ([]Trade, e
 		param.Set("fromId", strconv.Itoa(int(since)))
 	}
 	apiUrl := bn.apiV3 + "historicalTrades?" + param.Encode()
-	resp, err := HttpGet3(bn.httpClient, apiUrl, map[string]string{
+	resp, err := api.HttpGet3(bn.httpClient, apiUrl, map[string]string{
 		"X-MBX-APIKEY": bn.accessKey})
 	if err != nil {
 		return nil, err
 	}
 
-	var trades []Trade
+	var trades []types.Trade
 	for _, v := range resp {
 		m := v.(map[string]interface{})
-		ty := SELL
+		ty := types.SELL
 		if m["isBuyerMaker"].(bool) {
-			ty = BUY
+			ty = types.BUY
 		}
-		trades = append(trades, Trade{
+		trades = append(trades, types.Trade{
 			Tid:    ToInt64(m["id"]),
 			Type:   ty,
 			Amount: ToFloat64(m["qty"]),
@@ -555,7 +558,7 @@ func (bn *Binance) GetTrades(currencyPair CurrencyPair, since int64) ([]Trade, e
 	return trades, nil
 }
 
-func (bn *Binance) GetOrderHistorys(currency CurrencyPair, optional ...OptionalParameter) ([]Order, error) {
+func (bn *Binance) GetOrderHistorys(currency types.CurrencyPair, optional ...types.OptionalParameter) ([]types.Order, error) {
 	params := url.Values{}
 	params.Set("symbol", currency.AdaptUsdToUsdt().ToSymbol(""))
 	MergeOptionalParameter(&params, optional...)
@@ -563,12 +566,12 @@ func (bn *Binance) GetOrderHistorys(currency CurrencyPair, optional ...OptionalP
 
 	path := bn.apiV3 + "allOrders?" + params.Encode()
 
-	respmap, err := HttpGet3(bn.httpClient, path, map[string]string{"X-MBX-APIKEY": bn.accessKey})
+	respmap, err := api.HttpGet3(bn.httpClient, path, map[string]string{"X-MBX-APIKEY": bn.accessKey})
 	if err != nil {
 		return nil, err
 	}
 
-	orders := make([]Order, 0)
+	orders := make([]types.Order, 0)
 	for _, v := range respmap {
 		orderMap := v.(map[string]interface{})
 		orders = append(orders, bn.adaptOrder(currency, orderMap))
@@ -578,24 +581,24 @@ func (bn *Binance) GetOrderHistorys(currency CurrencyPair, optional ...OptionalP
 
 }
 
-func (bn *Binance) toCurrencyPair(symbol string) CurrencyPair {
+func (bn *Binance) toCurrencyPair(symbol string) types.CurrencyPair {
 	if bn.ExchangeInfo == nil {
 		var err error
 		bn.ExchangeInfo, err = bn.GetExchangeInfo()
 		if err != nil {
-			return CurrencyPair{}
+			return types.CurrencyPair{}
 		}
 	}
 	for _, v := range bn.ExchangeInfo.Symbols {
 		if v.Symbol == symbol {
-			return NewCurrencyPair2(v.BaseAsset + "_" + v.QuoteAsset)
+			return types.NewCurrencyPair2(v.BaseAsset + "_" + v.QuoteAsset)
 		}
 	}
-	return CurrencyPair{}
+	return types.CurrencyPair{}
 }
 
 func (bn *Binance) GetExchangeInfo() (*ExchangeInfo, error) {
-	resp, err := HttpGet5(bn.httpClient, bn.apiV3+"exchangeInfo", nil)
+	resp, err := api.HttpGet5(bn.httpClient, bn.apiV3+"exchangeInfo", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -608,7 +611,7 @@ func (bn *Binance) GetExchangeInfo() (*ExchangeInfo, error) {
 	return info, nil
 }
 
-func (bn *Binance) GetTradeSymbol(currencyPair CurrencyPair) (*TradeSymbol, error) {
+func (bn *Binance) GetTradeSymbol(currencyPair types.CurrencyPair) (*TradeSymbol, error) {
 	if bn.ExchangeInfo == nil {
 		var err error
 		bn.ExchangeInfo, err = bn.GetExchangeInfo()
@@ -629,26 +632,26 @@ func (bn *Binance) adaptError(err error) error {
 
 	if strings.Contains(errStr, "Order does not exist") ||
 		strings.Contains(errStr, "Unknown order sent") {
-		return EX_ERR_NOT_FIND_ORDER.OriginErr(errStr)
+		return exchange.EX_ERR_NOT_FIND_ORDER.OriginErr(errStr)
 	}
 
 	if strings.Contains(errStr, "Too much request") {
-		return EX_ERR_API_LIMIT.OriginErr(errStr)
+		return exchange.EX_ERR_API_LIMIT.OriginErr(errStr)
 	}
 
 	if strings.Contains(errStr, "insufficient") {
-		return EX_ERR_INSUFFICIENT_BALANCE.OriginErr(errStr)
+		return exchange.EX_ERR_INSUFFICIENT_BALANCE.OriginErr(errStr)
 	}
 
 	return err
 }
 
-func (bn *Binance) adaptOrder(currencyPair CurrencyPair, orderMap map[string]interface{}) Order {
+func (bn *Binance) adaptOrder(currencyPair types.CurrencyPair, orderMap map[string]interface{}) types.Order {
 	side := orderMap["side"].(string)
 
-	orderSide := SELL
+	orderSide := types.SELL
 	if side == "BUY" {
-		orderSide = BUY
+		orderSide = types.BUY
 	}
 
 	quoteQty := ToFloat64(orderMap["cummulativeQuoteQty"])
@@ -658,7 +661,7 @@ func (bn *Binance) adaptOrder(currencyPair CurrencyPair, orderMap map[string]int
 		avgPrice = FloatToFixed(quoteQty/qty, 8)
 	}
 
-	return Order{
+	return types.Order{
 		OrderID:      ToInt(orderMap["orderId"]),
 		OrderID2:     fmt.Sprintf("%.0f", orderMap["orderId"]),
 		Cid:          orderMap["clientOrderId"].(string),
@@ -667,7 +670,7 @@ func (bn *Binance) adaptOrder(currencyPair CurrencyPair, orderMap map[string]int
 		Amount:       ToFloat64(orderMap["origQty"]),
 		DealAmount:   ToFloat64(orderMap["executedQty"]),
 		AvgPrice:     avgPrice,
-		Side:         TradeSide(orderSide),
+		Side:         types.TradeSide(orderSide),
 		Status:       adaptOrderStatus(orderMap["status"].(string)),
 		OrderTime:    ToInt(orderMap["time"]),
 		FinishedTime: ToInt64(orderMap["updateTime"]),

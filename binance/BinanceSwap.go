@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/fpChan/goex"
+	"github.com/fpChan/goex/common/api"
+	"github.com/fpChan/goex/types"
 	"net/url"
 	"strconv"
 	"strings"
@@ -21,7 +23,7 @@ type BinanceSwap struct {
 	f *BinanceFutures
 }
 
-func NewBinanceSwap(config *APIConfig) *BinanceSwap {
+func NewBinanceSwap(config *types.APIConfig) *BinanceSwap {
 	if config.Endpoint == "" {
 		config.Endpoint = baseUrl
 	}
@@ -34,7 +36,7 @@ func NewBinanceSwap(config *APIConfig) *BinanceSwap {
 			secretKey:  config.ApiSecretKey,
 			httpClient: config.HttpClient,
 		},
-		f: NewBinanceFutures(&APIConfig{
+		f: NewBinanceFutures(&types.APIConfig{
 			Endpoint:     strings.ReplaceAll(config.Endpoint, "fapi", "dapi"),
 			HttpClient:   config.HttpClient,
 			ApiKey:       config.ApiKey,
@@ -51,11 +53,11 @@ func (bs *BinanceSwap) SetBaseUri(uri string) {
 }
 
 func (bs *BinanceSwap) GetExchangeName() string {
-	return BINANCE_SWAP
+	return types.BINANCE_SWAP
 }
 
 func (bs *BinanceSwap) Ping() bool {
-	_, err := HttpGet(bs.httpClient, bs.apiV1+"ping")
+	_, err := api.HttpGet(bs.httpClient, bs.apiV1+"ping")
 	if err != nil {
 		return false
 	}
@@ -63,7 +65,7 @@ func (bs *BinanceSwap) Ping() bool {
 }
 
 func (bs *BinanceSwap) setTimeOffset() error {
-	respmap, err := HttpGet(bs.httpClient, bs.apiV1+SERVER_TIME_URL)
+	respmap, err := api.HttpGet(bs.httpClient, bs.apiV1+SERVER_TIME_URL)
 	if err != nil {
 		return err
 	}
@@ -76,16 +78,16 @@ func (bs *BinanceSwap) setTimeOffset() error {
 	return nil
 }
 
-func (bs *BinanceSwap) GetFutureEstimatedPrice(currencyPair CurrencyPair) (float64, error) {
+func (bs *BinanceSwap) GetFutureEstimatedPrice(currencyPair types.CurrencyPair) (float64, error) {
 	panic("not supported.")
 }
 
-func (bs *BinanceSwap) GetFutureTicker(currency CurrencyPair, contractType string) (*Ticker, error) {
-	if contractType == SWAP_CONTRACT {
-		return bs.f.GetFutureTicker(currency.AdaptUsdtToUsd(), SWAP_CONTRACT)
+func (bs *BinanceSwap) GetFutureTicker(currency types.CurrencyPair, contractType string) (*types.Ticker, error) {
+	if contractType == types.SWAP_CONTRACT {
+		return bs.f.GetFutureTicker(currency.AdaptUsdtToUsd(), types.SWAP_CONTRACT)
 	}
 
-	if contractType != SWAP_USDT_CONTRACT {
+	if contractType != types.SWAP_USDT_CONTRACT {
 		return nil, errors.New("contract is error,please incoming SWAP_CONTRACT or SWAP_USDT_CONTRACT")
 	}
 
@@ -100,11 +102,11 @@ func (bs *BinanceSwap) GetFutureTicker(currency CurrencyPair, contractType strin
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		tickerPriceMap, err1 = HttpGet(bs.httpClient, tickerPriceUri)
+		tickerPriceMap, err1 = api.HttpGet(bs.httpClient, tickerPriceUri)
 	}()
 	go func() {
 		defer wg.Done()
-		tickerBookeMap, err2 = HttpGet(bs.httpClient, tickerBookUri)
+		tickerBookeMap, err2 = api.HttpGet(bs.httpClient, tickerBookUri)
 	}()
 	wg.Wait()
 	if err1 != nil {
@@ -114,7 +116,7 @@ func (bs *BinanceSwap) GetFutureTicker(currency CurrencyPair, contractType strin
 		return nil, err2
 	}
 
-	var ticker Ticker
+	var ticker types.Ticker
 	ticker.Pair = currency
 	ticker.Date = uint64(time.Now().UnixNano() / int64(time.Millisecond))
 	ticker.Last = ToFloat64(tickerPriceMap["price"])
@@ -123,12 +125,12 @@ func (bs *BinanceSwap) GetFutureTicker(currency CurrencyPair, contractType strin
 	return &ticker, nil
 }
 
-func (bs *BinanceSwap) GetFutureDepth(currency CurrencyPair, contractType string, size int) (*Depth, error) {
-	if contractType == SWAP_CONTRACT {
-		return bs.f.GetFutureDepth(currency.AdaptUsdtToUsd(), SWAP_CONTRACT, size)
+func (bs *BinanceSwap) GetFutureDepth(currency types.CurrencyPair, contractType string, size int) (*types.Depth, error) {
+	if contractType == types.SWAP_CONTRACT {
+		return bs.f.GetFutureDepth(currency.AdaptUsdtToUsd(), types.SWAP_CONTRACT, size)
 	}
 
-	if contractType != SWAP_USDT_CONTRACT {
+	if contractType != types.SWAP_USDT_CONTRACT {
 		return nil, errors.New("contract is error,please incoming SWAP_CONTRACT or SWAP_USDT_CONTRACT")
 	}
 
@@ -150,7 +152,7 @@ func (bs *BinanceSwap) GetFutureDepth(currency CurrencyPair, contractType string
 	currencyPair2 := bs.adaptCurrencyPair(currency)
 
 	apiUrl := fmt.Sprintf(bs.apiV1+DEPTH_URI, currencyPair2.ToSymbol(""), size)
-	resp, err := HttpGet(bs.httpClient, apiUrl)
+	resp, err := api.HttpGet(bs.httpClient, apiUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +164,7 @@ func (bs *BinanceSwap) GetFutureDepth(currency CurrencyPair, contractType string
 	bids := resp["bids"].([]interface{})
 	asks := resp["asks"].([]interface{})
 
-	depth := new(Depth)
+	depth := new(types.Depth)
 	depth.Pair = currency
 	depth.UTime = time.Now()
 	n := 0
@@ -170,7 +172,7 @@ func (bs *BinanceSwap) GetFutureDepth(currency CurrencyPair, contractType string
 		_bid := bid.([]interface{})
 		amount := ToFloat64(_bid[1])
 		price := ToFloat64(_bid[0])
-		dr := DepthRecord{Amount: amount, Price: price}
+		dr := types.DepthRecord{Amount: amount, Price: price}
 		depth.BidList = append(depth.BidList, dr)
 		n++
 		if n == size {
@@ -183,7 +185,7 @@ func (bs *BinanceSwap) GetFutureDepth(currency CurrencyPair, contractType string
 		_ask := ask.([]interface{})
 		amount := ToFloat64(_ask[1])
 		price := ToFloat64(_ask[0])
-		dr := DepthRecord{Amount: amount, Price: price}
+		dr := types.DepthRecord{Amount: amount, Price: price}
 		depth.AskList = append(depth.AskList, dr)
 		n++
 		if n == size {
@@ -194,16 +196,16 @@ func (bs *BinanceSwap) GetFutureDepth(currency CurrencyPair, contractType string
 	return depth, nil
 }
 
-func (bs *BinanceSwap) GetFutureOrderHistory(pair CurrencyPair, contractType string, optional ...OptionalParameter) ([]FutureOrder, error) {
+func (bs *BinanceSwap) GetFutureOrderHistory(pair types.CurrencyPair, contractType string, optional ...types.OptionalParameter) ([]types.FutureOrder, error) {
 	panic("implement me")
 }
 
-func (bs *BinanceSwap) GetTrades(contractType string, currencyPair CurrencyPair, since int64) ([]Trade, error) {
-	if contractType == SWAP_CONTRACT {
-		return bs.f.GetTrades(SWAP_CONTRACT, currencyPair.AdaptUsdtToUsd(), since)
+func (bs *BinanceSwap) GetTrades(contractType string, currencyPair types.CurrencyPair, since int64) ([]types.Trade, error) {
+	if contractType == types.SWAP_CONTRACT {
+		return bs.f.GetTrades(types.SWAP_CONTRACT, currencyPair.AdaptUsdtToUsd(), since)
 	}
 
-	if contractType != SWAP_USDT_CONTRACT {
+	if contractType != types.SWAP_USDT_CONTRACT {
 		return nil, errors.New("contract is error,please incoming SWAP_CONTRACT or SWAP_USDT_CONTRACT")
 	}
 
@@ -214,20 +216,20 @@ func (bs *BinanceSwap) GetTrades(contractType string, currencyPair CurrencyPair,
 		param.Set("fromId", strconv.Itoa(int(since)))
 	}
 	apiUrl := bs.apiV1 + "historicalTrades?" + param.Encode()
-	resp, err := HttpGet3(bs.httpClient, apiUrl, map[string]string{
+	resp, err := api.HttpGet3(bs.httpClient, apiUrl, map[string]string{
 		"X-MBX-APIKEY": bs.accessKey})
 	if err != nil {
 		return nil, err
 	}
 
-	var trades []Trade
+	var trades []types.Trade
 	for _, v := range resp {
 		m := v.(map[string]interface{})
-		ty := SELL
+		ty := types.SELL
 		if m["isBuyerMaker"].(bool) {
-			ty = BUY
+			ty = types.BUY
 		}
-		trades = append(trades, Trade{
+		trades = append(trades, types.Trade{
 			Tid:    ToInt64(m["id"]),
 			Type:   ty,
 			Amount: ToFloat64(m["qty"]),
@@ -241,8 +243,8 @@ func (bs *BinanceSwap) GetTrades(contractType string, currencyPair CurrencyPair,
 
 }
 
-func (bs *BinanceSwap) GetFutureIndex(currencyPair CurrencyPair) (float64, error) {
-	respmap, err := HttpGet(bs.httpClient, bs.apiV1+"premiumIndex?symbol="+bs.adaptCurrencyPair(currencyPair).ToSymbol(""))
+func (bs *BinanceSwap) GetFutureIndex(currencyPair types.CurrencyPair) (float64, error) {
+	respmap, err := api.HttpGet(bs.httpClient, bs.apiV1+"premiumIndex?symbol="+bs.adaptCurrencyPair(currencyPair).ToSymbol(""))
 	if err != nil {
 		return 0.0, err
 	}
@@ -250,7 +252,7 @@ func (bs *BinanceSwap) GetFutureIndex(currencyPair CurrencyPair) (float64, error
 	return ToFloat64(respmap["markPrice"]), nil
 }
 
-func (bs *BinanceSwap) GetFutureUserinfo(currencyPair ...CurrencyPair) (*FutureAccount, error) {
+func (bs *BinanceSwap) GetFutureUserinfo(currencyPair ...types.CurrencyPair) (*types.FutureAccount, error) {
 	acc, err := bs.f.GetFutureUserinfo(currencyPair...)
 	if err != nil {
 		return nil, err
@@ -259,7 +261,7 @@ func (bs *BinanceSwap) GetFutureUserinfo(currencyPair ...CurrencyPair) (*FutureA
 	params := url.Values{}
 	bs.buildParamsSigned(&params)
 	path := bs.apiV1 + ACCOUNT_URI + params.Encode()
-	respmap, err := HttpGet2(bs.httpClient, path, map[string]string{"X-MBX-APIKEY": bs.accessKey})
+	respmap, err := api.HttpGet2(bs.httpClient, path, map[string]string{"X-MBX-APIKEY": bs.accessKey})
 	if err != nil {
 		return nil, err
 	}
@@ -271,8 +273,8 @@ func (bs *BinanceSwap) GetFutureUserinfo(currencyPair ...CurrencyPair) (*FutureA
 	balances := respmap["assets"].([]interface{})
 	for _, v := range balances {
 		vv := v.(map[string]interface{})
-		currency := NewCurrency(vv["asset"].(string), "").AdaptBccToBch()
-		acc.FutureSubAccounts[currency] = FutureSubAccount{
+		currency := types.NewCurrency(vv["asset"].(string), "").AdaptBccToBch()
+		acc.FutureSubAccounts[currency] = types.FutureSubAccount{
 			Currency:      currency,
 			AccountRights: ToFloat64(vv["marginBalance"]),
 			KeepDeposit:   ToFloat64(vv["maintMargin"]),
@@ -284,7 +286,7 @@ func (bs *BinanceSwap) GetFutureUserinfo(currencyPair ...CurrencyPair) (*FutureA
 }
 
 //@deprecated please call the Wallet api
-func (bs *BinanceSwap) Transfer(currency Currency, transferType int, amount float64) (int64, error) {
+func (bs *BinanceSwap) Transfer(currency types.Currency, transferType int, amount float64) (int64, error) {
 	params := url.Values{}
 
 	params.Set("currency", currency.String())
@@ -293,7 +295,7 @@ func (bs *BinanceSwap) Transfer(currency Currency, transferType int, amount floa
 	uri := "https://api.binance.com/sapi/v1/futures/transfer"
 	bs.buildParamsSigned(&params)
 
-	resp, err := HttpPostForm2(bs.httpClient, uri, params,
+	resp, err := api.HttpPostForm2(bs.httpClient, uri, params,
 		map[string]string{"X-MBX-APIKEY": bs.accessKey})
 	if err != nil {
 		return 0, err
@@ -308,19 +310,19 @@ func (bs *BinanceSwap) Transfer(currency Currency, transferType int, amount floa
 	return ToInt64(respmap["tranId"]), nil
 }
 
-func (bs *BinanceSwap) PlaceFutureOrder(currencyPair CurrencyPair, contractType, price, amount string, openType, matchPrice int, leverRate float64) (string, error) {
+func (bs *BinanceSwap) PlaceFutureOrder(currencyPair types.CurrencyPair, contractType, price, amount string, openType, matchPrice int, leverRate float64) (string, error) {
 	fOrder, err := bs.PlaceFutureOrder2(currencyPair, contractType, price, amount, openType, matchPrice, leverRate)
 	return fOrder.OrderID2, err
 }
 
-func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType, price, amount string, openType, matchPrice int, leverRate float64) (*FutureOrder, error) {
-	if contractType == SWAP_CONTRACT {
+func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair types.CurrencyPair, contractType, price, amount string, openType, matchPrice int, leverRate float64) (*types.FutureOrder, error) {
+	if contractType == types.SWAP_CONTRACT {
 		orderId, err := bs.f.PlaceFutureOrder(currencyPair.AdaptUsdtToUsd(), contractType, price, amount, openType, matchPrice, leverRate)
-		return &FutureOrder{
+		return &types.FutureOrder{
 			OrderID2:     orderId,
 			Price:        ToFloat64(price),
 			Amount:       ToFloat64(amount),
-			Status:       ORDER_UNFINISH,
+			Status:       types.ORDER_UNFINISH,
 			Currency:     currencyPair,
 			OType:        openType,
 			LeverRate:    leverRate,
@@ -328,11 +330,11 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 		}, err
 	}
 
-	if contractType != SWAP_USDT_CONTRACT {
+	if contractType != types.SWAP_USDT_CONTRACT {
 		return nil, errors.New("contract is error,please incoming SWAP_CONTRACT or SWAP_USDT_CONTRACT")
 	}
 
-	fOrder := &FutureOrder{
+	fOrder := &types.FutureOrder{
 		Currency:     currencyPair,
 		ClientOid:    GenerateOrderClientId(32),
 		Price:        ToFloat64(price),
@@ -350,9 +352,9 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 	params.Set("newClientOrderId", fOrder.ClientOid)
 
 	switch openType {
-	case OPEN_BUY, CLOSE_SELL:
+	case types.OPEN_BUY, types.CLOSE_SELL:
 		params.Set("side", "BUY")
-	case OPEN_SELL, CLOSE_BUY:
+	case types.OPEN_SELL, types.CLOSE_BUY:
 		params.Set("side", "SELL")
 	}
 	if matchPrice == 0 {
@@ -364,7 +366,7 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 	}
 
 	bs.buildParamsSigned(&params)
-	resp, err := HttpPostForm2(bs.httpClient, path, params,
+	resp, err := api.HttpPostForm2(bs.httpClient, path, params,
 		map[string]string{"X-MBX-APIKEY": bs.accessKey})
 	if err != nil {
 		return fOrder, err
@@ -385,20 +387,20 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 	return fOrder, nil
 }
 
-func (bs *BinanceSwap) LimitFuturesOrder(currencyPair CurrencyPair, contractType, price, amount string, openType int, opt ...LimitOrderOptionalParameter) (*FutureOrder, error) {
+func (bs *BinanceSwap) LimitFuturesOrder(currencyPair types.CurrencyPair, contractType, price, amount string, openType int, opt ...types.LimitOrderOptionalParameter) (*types.FutureOrder, error) {
 	return bs.PlaceFutureOrder2(currencyPair, contractType, price, amount, openType, 0, 10)
 }
 
-func (bs *BinanceSwap) MarketFuturesOrder(currencyPair CurrencyPair, contractType, amount string, openType int) (*FutureOrder, error) {
+func (bs *BinanceSwap) MarketFuturesOrder(currencyPair types.CurrencyPair, contractType, amount string, openType int) (*types.FutureOrder, error) {
 	return bs.PlaceFutureOrder2(currencyPair, contractType, "0", amount, openType, 1, 10)
 }
 
-func (bs *BinanceSwap) FutureCancelOrder(currencyPair CurrencyPair, contractType, orderId string) (bool, error) {
-	if contractType == SWAP_CONTRACT {
+func (bs *BinanceSwap) FutureCancelOrder(currencyPair types.CurrencyPair, contractType, orderId string) (bool, error) {
+	if contractType == types.SWAP_CONTRACT {
 		return bs.f.FutureCancelOrder(currencyPair.AdaptUsdtToUsd(), contractType, orderId)
 	}
 
-	if contractType != SWAP_USDT_CONTRACT {
+	if contractType != types.SWAP_USDT_CONTRACT {
 		return false, errors.New("contract is error,please incoming SWAP_CONTRACT or SWAP_USDT_CONTRACT")
 	}
 
@@ -410,7 +412,7 @@ func (bs *BinanceSwap) FutureCancelOrder(currencyPair CurrencyPair, contractType
 
 	bs.buildParamsSigned(&params)
 
-	resp, err := HttpDeleteForm(bs.httpClient, path, params, map[string]string{"X-MBX-APIKEY": bs.accessKey})
+	resp, err := api.HttpDeleteForm(bs.httpClient, path, params, map[string]string{"X-MBX-APIKEY": bs.accessKey})
 
 	if err != nil {
 		return false, err
@@ -430,16 +432,16 @@ func (bs *BinanceSwap) FutureCancelOrder(currencyPair CurrencyPair, contractType
 	return true, nil
 }
 
-func (bs *BinanceSwap) FutureCancelAllOrders(currencyPair CurrencyPair, contractType string) (bool, error) {
-	if contractType == SWAP_CONTRACT {
+func (bs *BinanceSwap) FutureCancelAllOrders(currencyPair types.CurrencyPair, contractType string) (bool, error) {
+	if contractType == types.SWAP_CONTRACT {
 		return false, errors.New("not support")
 	}
 
-	if contractType == SWAP_CONTRACT {
+	if contractType == types.SWAP_CONTRACT {
 		return false, errors.New("not support")
 	}
 
-	if contractType != SWAP_USDT_CONTRACT {
+	if contractType != types.SWAP_USDT_CONTRACT {
 		return false, errors.New("contract is error,please incoming SWAP_CONTRACT or SWAP_USDT_CONTRACT")
 	}
 
@@ -450,7 +452,7 @@ func (bs *BinanceSwap) FutureCancelAllOrders(currencyPair CurrencyPair, contract
 
 	bs.buildParamsSigned(&params)
 
-	resp, err := HttpDeleteForm(bs.httpClient, path, params, map[string]string{"X-MBX-APIKEY": bs.accessKey})
+	resp, err := api.HttpDeleteForm(bs.httpClient, path, params, map[string]string{"X-MBX-APIKEY": bs.accessKey})
 
 	if err != nil {
 		return false, err
@@ -469,8 +471,8 @@ func (bs *BinanceSwap) FutureCancelAllOrders(currencyPair CurrencyPair, contract
 	return true, nil
 }
 
-func (bs *BinanceSwap) FutureCancelOrders(currencyPair CurrencyPair, contractType string, orderIdList []string) (bool, error) {
-	if contractType != SWAP_USDT_CONTRACT {
+func (bs *BinanceSwap) FutureCancelOrders(currencyPair types.CurrencyPair, contractType string, orderIdList []string) (bool, error) {
+	if contractType != types.SWAP_USDT_CONTRACT {
 		return false, errors.New("contract is error,please incoming SWAP_CONTRACT or SWAP_USDT_CONTRACT")
 	}
 
@@ -488,7 +490,7 @@ func (bs *BinanceSwap) FutureCancelOrders(currencyPair CurrencyPair, contractTyp
 
 	bs.buildParamsSigned(&params)
 
-	resp, err := HttpDeleteForm(bs.httpClient, path, params, map[string]string{"X-MBX-APIKEY": bs.accessKey})
+	resp, err := api.HttpDeleteForm(bs.httpClient, path, params, map[string]string{"X-MBX-APIKEY": bs.accessKey})
 
 	if err != nil {
 		return false, err
@@ -507,12 +509,12 @@ func (bs *BinanceSwap) FutureCancelOrders(currencyPair CurrencyPair, contractTyp
 	return true, nil
 }
 
-func (bs *BinanceSwap) GetFuturePosition(currencyPair CurrencyPair, contractType string) ([]FuturePosition, error) {
-	if contractType == SWAP_CONTRACT {
+func (bs *BinanceSwap) GetFuturePosition(currencyPair types.CurrencyPair, contractType string) ([]types.FuturePosition, error) {
+	if contractType == types.SWAP_CONTRACT {
 		return bs.f.GetFuturePosition(currencyPair.AdaptUsdtToUsd(), contractType)
 	}
 
-	if contractType != SWAP_USDT_CONTRACT {
+	if contractType != types.SWAP_USDT_CONTRACT {
 		return nil, errors.New("contract is error,please incoming SWAP_CONTRACT or SWAP_USDT_CONTRACT")
 	}
 
@@ -522,20 +524,20 @@ func (bs *BinanceSwap) GetFuturePosition(currencyPair CurrencyPair, contractType
 	bs.buildParamsSigned(&params)
 	path := bs.apiV1 + "positionRisk?" + params.Encode()
 
-	result, err := HttpGet3(bs.httpClient, path, map[string]string{"X-MBX-APIKEY": bs.accessKey})
+	result, err := api.HttpGet3(bs.httpClient, path, map[string]string{"X-MBX-APIKEY": bs.accessKey})
 
 	if err != nil {
 		return nil, err
 	}
 
-	var positions []FuturePosition
+	var positions []types.FuturePosition
 	for _, info := range result {
 
 		cont := info.(map[string]interface{})
 		if cont["symbol"] != currencyPair1.ToSymbol("") {
 			continue
 		}
-		p := FuturePosition{
+		p := types.FuturePosition{
 			LeverRate:      ToFloat64(cont["leverage"]),
 			Symbol:         currencyPair,
 			ForceLiquPrice: ToFloat64(cont["liquidationPrice"]),
@@ -557,12 +559,12 @@ func (bs *BinanceSwap) GetFuturePosition(currencyPair CurrencyPair, contractType
 	return positions, nil
 }
 
-func (bs *BinanceSwap) GetFutureOrders(orderIds []string, currencyPair CurrencyPair, contractType string) ([]FutureOrder, error) {
-	if contractType == SWAP_CONTRACT {
+func (bs *BinanceSwap) GetFutureOrders(orderIds []string, currencyPair types.CurrencyPair, contractType string) ([]types.FutureOrder, error) {
+	if contractType == types.SWAP_CONTRACT {
 		return nil, errors.New("not support")
 	}
 
-	if contractType != SWAP_USDT_CONTRACT {
+	if contractType != types.SWAP_USDT_CONTRACT {
 		return nil, errors.New("contract is error,please incoming SWAP_CONTRACT or SWAP_USDT_CONTRACT")
 	}
 
@@ -577,13 +579,13 @@ func (bs *BinanceSwap) GetFutureOrders(orderIds []string, currencyPair CurrencyP
 
 	path := bs.apiV1 + "allOrders?" + params.Encode()
 
-	result, err := HttpGet3(bs.httpClient, path, map[string]string{"X-MBX-APIKEY": bs.accessKey})
+	result, err := api.HttpGet3(bs.httpClient, path, map[string]string{"X-MBX-APIKEY": bs.accessKey})
 
 	if err != nil {
 		return nil, err
 	}
 
-	orders := make([]FutureOrder, 0)
+	orders := make([]types.FutureOrder, 0)
 	for _, info := range result {
 
 		_ord := info.(map[string]interface{})
@@ -595,7 +597,7 @@ func (bs *BinanceSwap) GetFutureOrders(orderIds []string, currencyPair CurrencyP
 
 		for _, id := range orderIds {
 			if id == ordId {
-				order := &FutureOrder{}
+				order := &types.FutureOrder{}
 				order = bs.parseOrder(_ord)
 				order.Currency = currencyPair
 				orders = append(orders, *order)
@@ -607,12 +609,12 @@ func (bs *BinanceSwap) GetFutureOrders(orderIds []string, currencyPair CurrencyP
 
 }
 
-func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair, contractType string) (*FutureOrder, error) {
-	if contractType == SWAP_CONTRACT {
+func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair types.CurrencyPair, contractType string) (*types.FutureOrder, error) {
+	if contractType == types.SWAP_CONTRACT {
 		return bs.f.GetFutureOrder(orderId, currencyPair.AdaptUsdtToUsd(), contractType)
 	}
 
-	if contractType != SWAP_USDT_CONTRACT {
+	if contractType != types.SWAP_USDT_CONTRACT {
 		return nil, errors.New("contract is error,please incoming SWAP_CONTRACT or SWAP_USDT_CONTRACT")
 	}
 
@@ -625,13 +627,13 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair,
 
 	path := bs.apiV1 + "allOrders?" + params.Encode()
 
-	result, err := HttpGet3(bs.httpClient, path, map[string]string{"X-MBX-APIKEY": bs.accessKey})
+	result, err := api.HttpGet3(bs.httpClient, path, map[string]string{"X-MBX-APIKEY": bs.accessKey})
 
 	if err != nil {
 		return nil, err
 	}
 
-	order := &FutureOrder{}
+	order := &types.FutureOrder{}
 	ordId, _ := strconv.Atoi(orderId)
 	for _, info := range result {
 
@@ -651,8 +653,8 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair,
 	return nil, errors.New(fmt.Sprintf("not found order:%s", orderId))
 }
 
-func (bs *BinanceSwap) parseOrder(rsp map[string]interface{}) *FutureOrder {
-	order := &FutureOrder{}
+func (bs *BinanceSwap) parseOrder(rsp map[string]interface{}) *types.FutureOrder {
+	order := &types.FutureOrder{}
 	order.Price = ToFloat64(rsp["price"])
 	order.Amount = ToFloat64(rsp["origQty"])
 	order.DealAmount = ToFloat64(rsp["executedQty"])
@@ -663,9 +665,9 @@ func (bs *BinanceSwap) parseOrder(rsp map[string]interface{}) *FutureOrder {
 	order.Status = bs.parseOrderStatus(status)
 	order.OrderID = ToInt64(rsp["orderId"])
 	order.OrderID2 = strconv.Itoa(int(order.OrderID))
-	order.OType = OPEN_BUY
+	order.OType = types.OPEN_BUY
 	if rsp["side"].(string) == "SELL" {
-		order.OType = OPEN_SELL
+		order.OType = types.OPEN_SELL
 	}
 
 	//GTC - Good Till Cancel 成交为止
@@ -675,13 +677,13 @@ func (bs *BinanceSwap) parseOrder(rsp map[string]interface{}) *FutureOrder {
 	ot := rsp["timeInForce"].(string)
 	switch ot {
 	case "GTC":
-		order.OrderType = ORDER_FEATURE_LIMIT
+		order.OrderType = types.ORDER_FEATURE_LIMIT
 	case "IOC":
-		order.OrderType = ORDER_FEATURE_IOC
+		order.OrderType = types.ORDER_FEATURE_IOC
 	case "FOK":
-		order.OrderType = ORDER_FEATURE_FOK
+		order.OrderType = types.ORDER_FEATURE_FOK
 	case "GTX":
-		order.OrderType = ORDER_FEATURE_IOC
+		order.OrderType = types.ORDER_FEATURE_IOC
 
 	}
 
@@ -695,25 +697,25 @@ func (bs *BinanceSwap) parseOrder(rsp map[string]interface{}) *FutureOrder {
 	return order
 }
 
-func (bs *BinanceSwap) parseOrderStatus(sts string) TradeStatus {
-	orderStatus := ORDER_UNFINISH
+func (bs *BinanceSwap) parseOrderStatus(sts string) types.TradeStatus {
+	orderStatus := types.ORDER_UNFINISH
 	switch sts {
 	case "PARTIALLY_FILLED", "partially_filled":
-		orderStatus = ORDER_PART_FINISH
+		orderStatus = types.ORDER_PART_FINISH
 	case "FILLED", "filled":
-		orderStatus = ORDER_FINISH
+		orderStatus = types.ORDER_FINISH
 	case "CANCELED", "REJECTED", "EXPIRED":
-		orderStatus = ORDER_CANCEL
+		orderStatus = types.ORDER_CANCEL
 	}
 	return orderStatus
 }
 
-func (bs *BinanceSwap) GetUnfinishFutureOrders(currencyPair CurrencyPair, contractType string) ([]FutureOrder, error) {
-	if contractType == SWAP_CONTRACT {
+func (bs *BinanceSwap) GetUnfinishFutureOrders(currencyPair types.CurrencyPair, contractType string) ([]types.FutureOrder, error) {
+	if contractType == types.SWAP_CONTRACT {
 		return bs.f.GetUnfinishFutureOrders(currencyPair.AdaptUsdtToUsd(), contractType)
 	}
 
-	if contractType != SWAP_USDT_CONTRACT {
+	if contractType != types.SWAP_USDT_CONTRACT {
 		return nil, errors.New("contract is error,please incoming SWAP_CONTRACT or SWAP_USDT_CONTRACT")
 	}
 
@@ -725,20 +727,20 @@ func (bs *BinanceSwap) GetUnfinishFutureOrders(currencyPair CurrencyPair, contra
 
 	path := bs.apiV1 + "openOrders?" + params.Encode()
 
-	result, err := HttpGet3(bs.httpClient, path, map[string]string{"X-MBX-APIKEY": bs.accessKey})
+	result, err := api.HttpGet3(bs.httpClient, path, map[string]string{"X-MBX-APIKEY": bs.accessKey})
 
 	if err != nil {
 		return nil, err
 	}
 
-	orders := make([]FutureOrder, 0)
+	orders := make([]types.FutureOrder, 0)
 	for _, info := range result {
 
 		_ord := info.(map[string]interface{})
 		if _ord["symbol"].(string) != currencyPair1.ToSymbol("") {
 			continue
 		}
-		order := &FutureOrder{}
+		order := &types.FutureOrder{}
 		order = bs.parseOrder(_ord)
 		order.Currency = currencyPair
 		orders = append(orders, *order)
@@ -750,7 +752,7 @@ func (bs *BinanceSwap) GetFee() (float64, error) {
 	panic("not supported.")
 }
 
-func (bs *BinanceSwap) GetContractValue(currencyPair CurrencyPair) (float64, error) {
+func (bs *BinanceSwap) GetContractValue(currencyPair types.CurrencyPair) (float64, error) {
 	panic("not supported.")
 }
 
@@ -758,32 +760,32 @@ func (bs *BinanceSwap) GetDeliveryTime() (int, int, int, int) {
 	panic("not supported.")
 }
 
-func (bs *BinanceSwap) GetKlineRecords(contractType string, currency CurrencyPair, period KlinePeriod, size int, opt ...OptionalParameter) ([]FutureKline, error) {
-	if contractType == SWAP_CONTRACT {
+func (bs *BinanceSwap) GetKlineRecords(contractType string, currency types.CurrencyPair, period types.KlinePeriod, size int, opt ...types.OptionalParameter) ([]types.FutureKline, error) {
+	if contractType == types.SWAP_CONTRACT {
 		return bs.f.GetKlineRecords(contractType, currency.AdaptUsdtToUsd(), period, size, opt...)
 	}
 
-	if contractType != SWAP_USDT_CONTRACT {
+	if contractType != types.SWAP_USDT_CONTRACT {
 		return nil, errors.New("contract is error,please incoming SWAP_CONTRACT or SWAP_USDT_CONTRACT")
 	}
 
 	currency2 := bs.adaptCurrencyPair(currency)
 	params := url.Values{}
 	params.Set("symbol", currency2.ToSymbol(""))
-	params.Set("interval", _INERNAL_KLINE_PERIOD_CONVERTER[KlinePeriod(period)])
+	params.Set("interval", _INERNAL_KLINE_PERIOD_CONVERTER[types.KlinePeriod(period)])
 	//params.Set("endTime", strconv.Itoa(int(time.Now().UnixNano()/1000000)))
 	params.Set("limit", strconv.Itoa(size))
 	MergeOptionalParameter(&params, opt...)
 
 	klineUrl := bs.apiV1 + KLINE_URI + "?" + params.Encode()
-	klines, err := HttpGet3(bs.httpClient, klineUrl, nil)
+	klines, err := api.HttpGet3(bs.httpClient, klineUrl, nil)
 	if err != nil {
 		return nil, err
 	}
-	var klineRecords []FutureKline
+	var klineRecords []types.FutureKline
 
 	for _, _record := range klines {
-		r := Kline{Pair: currency}
+		r := types.Kline{Pair: currency}
 		record := _record.([]interface{})
 		r.Timestamp = int64(record[0].(float64)) / 1000 //to unix timestramp
 		r.Open = ToFloat64(record[1])
@@ -792,14 +794,14 @@ func (bs *BinanceSwap) GetKlineRecords(contractType string, currency CurrencyPai
 		r.Close = ToFloat64(record[4])
 		r.Vol = ToFloat64(record[5])
 
-		klineRecords = append(klineRecords, FutureKline{Kline: &r})
+		klineRecords = append(klineRecords, types.FutureKline{Kline: &r})
 	}
 
 	return klineRecords, nil
 }
 
 func (bs *BinanceSwap) GetServerTime() (int64, error) {
-	respmap, err := HttpGet(bs.httpClient, bs.apiV1+SERVER_TIME_URL)
+	respmap, err := api.HttpGet(bs.httpClient, bs.apiV1+SERVER_TIME_URL)
 	if err != nil {
 		return 0, err
 	}
@@ -809,6 +811,6 @@ func (bs *BinanceSwap) GetServerTime() (int64, error) {
 	return stime, nil
 }
 
-func (bs *BinanceSwap) adaptCurrencyPair(pair CurrencyPair) CurrencyPair {
+func (bs *BinanceSwap) adaptCurrencyPair(pair types.CurrencyPair) types.CurrencyPair {
 	return pair.AdaptUsdToUsdt()
 }

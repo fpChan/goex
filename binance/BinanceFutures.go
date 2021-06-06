@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/fpChan/goex"
+	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/internal/logger"
+	"github.com/fpChan/goex/types"
 	"math"
 	"net/http"
 	"net/url"
@@ -79,7 +81,7 @@ type BinanceFutures struct {
 	}
 }
 
-func NewBinanceFutures(config *APIConfig) *BinanceFutures {
+func NewBinanceFutures(config *types.APIConfig) *BinanceFutures {
 	if config.Endpoint == "" {
 		config.Endpoint = "https://dapi.binance.com"
 	}
@@ -105,10 +107,10 @@ func (bs *BinanceFutures) SetBaseUri(uri string) {
 }
 
 func (bs *BinanceFutures) GetExchangeName() string {
-	return BINANCE_FUTURES
+	return types.BINANCE_FUTURES
 }
 
-func (bs *BinanceFutures) GetFutureTicker(currencyPair CurrencyPair, contractType string) (*Ticker, error) {
+func (bs *BinanceFutures) GetFutureTicker(currencyPair types.CurrencyPair, contractType string) (*types.Ticker, error) {
 	symbol, err := bs.adaptToSymbol(currencyPair, contractType)
 	if err != nil {
 		return nil, err
@@ -129,12 +131,12 @@ func (bs *BinanceFutures) GetFutureTicker(currencyPair CurrencyPair, contractTyp
 
 	go func() {
 		defer wg.Done()
-		ticker24HrResp, err1 = HttpGet3(bs.base.httpClient, ticker24hrUri, map[string]string{})
+		ticker24HrResp, err1 = api.HttpGet3(bs.base.httpClient, ticker24hrUri, map[string]string{})
 	}()
 
 	go func() {
 		defer wg.Done()
-		tickerBookResp, err2 = HttpGet3(bs.base.httpClient, tickerBookUri, map[string]string{})
+		tickerBookResp, err2 = api.HttpGet3(bs.base.httpClient, tickerBookUri, map[string]string{})
 	}()
 
 	wg.Wait()
@@ -158,7 +160,7 @@ func (bs *BinanceFutures) GetFutureTicker(currencyPair CurrencyPair, contractTyp
 	ticker24HrMap := ticker24HrResp[0].(map[string]interface{})
 	tickerBookMap := tickerBookResp[0].(map[string]interface{})
 
-	var ticker Ticker
+	var ticker types.Ticker
 	ticker.Pair = currencyPair
 	ticker.Date = ToUint64(tickerBookMap["time"])
 	ticker.Last = ToFloat64(ticker24HrMap["lastPrice"])
@@ -171,7 +173,7 @@ func (bs *BinanceFutures) GetFutureTicker(currencyPair CurrencyPair, contractTyp
 	return &ticker, nil
 }
 
-func (bs *BinanceFutures) GetFutureDepth(currencyPair CurrencyPair, contractType string, size int) (*Depth, error) {
+func (bs *BinanceFutures) GetFutureDepth(currencyPair types.CurrencyPair, contractType string, size int) (*types.Depth, error) {
 	symbol, err := bs.adaptToSymbol(currencyPair, contractType)
 	if err != nil {
 		return nil, err
@@ -196,13 +198,13 @@ func (bs *BinanceFutures) GetFutureDepth(currencyPair CurrencyPair, contractType
 
 	depthUri := bs.base.apiV1 + "depth?symbol=%s&limit=%d"
 
-	ret, err := HttpGet(bs.base.httpClient, fmt.Sprintf(depthUri, symbol, limit))
+	ret, err := api.HttpGet(bs.base.httpClient, fmt.Sprintf(depthUri, symbol, limit))
 	if err != nil {
 		return nil, err
 	}
 	logger.Debug(ret)
 
-	var dep Depth
+	var dep types.Depth
 
 	dep.ContractType = contractType
 	dep.Pair = currencyPair
@@ -211,7 +213,7 @@ func (bs *BinanceFutures) GetFutureDepth(currencyPair CurrencyPair, contractType
 
 	for _, item := range ret["asks"].([]interface{}) {
 		ask := item.([]interface{})
-		dep.AskList = append(dep.AskList, DepthRecord{
+		dep.AskList = append(dep.AskList, types.DepthRecord{
 			Price:  ToFloat64(ask[0]),
 			Amount: ToFloat64(ask[1]),
 		})
@@ -219,7 +221,7 @@ func (bs *BinanceFutures) GetFutureDepth(currencyPair CurrencyPair, contractType
 
 	for _, item := range ret["bids"].([]interface{}) {
 		bid := item.([]interface{})
-		dep.BidList = append(dep.BidList, DepthRecord{
+		dep.BidList = append(dep.BidList, types.DepthRecord{
 			Price:  ToFloat64(bid[0]),
 			Amount: ToFloat64(bid[1]),
 		})
@@ -230,16 +232,16 @@ func (bs *BinanceFutures) GetFutureDepth(currencyPair CurrencyPair, contractType
 	return &dep, nil
 }
 
-func (bs *BinanceFutures) GetFutureIndex(currencyPair CurrencyPair) (float64, error) {
+func (bs *BinanceFutures) GetFutureIndex(currencyPair types.CurrencyPair) (float64, error) {
 	panic("not supported.")
 }
 
-func (bs *BinanceFutures) GetFutureUserinfo(currencyPair ...CurrencyPair) (*FutureAccount, error) {
+func (bs *BinanceFutures) GetFutureUserinfo(currencyPair ...types.CurrencyPair) (*types.FutureAccount, error) {
 	accountUri := bs.base.apiV1 + "account"
 	param := url.Values{}
 	bs.base.buildParamsSigned(&param)
 
-	respData, err := HttpGet5(bs.base.httpClient, accountUri+"?"+param.Encode(), map[string]string{
+	respData, err := api.HttpGet5(bs.base.httpClient, accountUri+"?"+param.Encode(), map[string]string{
 		"X-MBX-APIKEY": bs.apikey})
 
 	if err != nil {
@@ -250,7 +252,7 @@ func (bs *BinanceFutures) GetFutureUserinfo(currencyPair ...CurrencyPair) (*Futu
 
 	var (
 		accountResp    AccountResponse
-		futureAccounts FutureAccount
+		futureAccounts types.FutureAccount
 	)
 
 	err = json.Unmarshal(respData, &accountResp)
@@ -258,11 +260,11 @@ func (bs *BinanceFutures) GetFutureUserinfo(currencyPair ...CurrencyPair) (*Futu
 		return nil, fmt.Errorf("response body: %s , %w", string(respData), err)
 	}
 
-	futureAccounts.FutureSubAccounts = make(map[Currency]FutureSubAccount, 4)
+	futureAccounts.FutureSubAccounts = make(map[types.Currency]types.FutureSubAccount, 4)
 	for _, asset := range accountResp.Assets {
-		currency := NewCurrency(asset.Asset, "")
-		futureAccounts.FutureSubAccounts[currency] = FutureSubAccount{
-			Currency:      NewCurrency(asset.Asset, ""),
+		currency := types.NewCurrency(asset.Asset, "")
+		futureAccounts.FutureSubAccounts[currency] = types.FutureSubAccount{
+			Currency:      types.NewCurrency(asset.Asset, ""),
 			AccountRights: asset.MarginBalance,
 			KeepDeposit:   asset.MaintMargin,
 			ProfitReal:    0,
@@ -274,7 +276,7 @@ func (bs *BinanceFutures) GetFutureUserinfo(currencyPair ...CurrencyPair) (*Futu
 	return &futureAccounts, nil
 }
 
-func (bs *BinanceFutures) PlaceFutureOrder(currencyPair CurrencyPair, contractType, price, amount string, openType, matchPrice int, leverRate float64) (string, error) {
+func (bs *BinanceFutures) PlaceFutureOrder(currencyPair types.CurrencyPair, contractType, price, amount string, openType, matchPrice int, leverRate float64) (string, error) {
 	apiPath := "order"
 	symbol, err := bs.adaptToSymbol(currencyPair, contractType)
 	if err != nil {
@@ -296,15 +298,15 @@ func (bs *BinanceFutures) PlaceFutureOrder(currencyPair CurrencyPair, contractTy
 	}
 
 	switch openType {
-	case OPEN_BUY, CLOSE_SELL:
+	case types.OPEN_BUY, types.CLOSE_SELL:
 		param.Set("side", "BUY")
-	case OPEN_SELL, CLOSE_BUY:
+	case types.OPEN_SELL, types.CLOSE_BUY:
 		param.Set("side", "SELL")
 	}
 
 	bs.base.buildParamsSigned(&param)
 
-	resp, err := HttpPostForm2(bs.base.httpClient, fmt.Sprintf("%s%s", bs.base.apiV1, apiPath), param,
+	resp, err := api.HttpPostForm2(bs.base.httpClient, fmt.Sprintf("%s%s", bs.base.apiV1, apiPath), param,
 		map[string]string{"X-MBX-APIKEY": bs.apikey})
 
 	if err != nil {
@@ -330,9 +332,9 @@ func (bs *BinanceFutures) PlaceFutureOrder(currencyPair CurrencyPair, contractTy
 	return "", errors.New(response.Msg)
 }
 
-func (bs *BinanceFutures) LimitFuturesOrder(currencyPair CurrencyPair, contractType, price, amount string, openType int, opt ...LimitOrderOptionalParameter) (*FutureOrder, error) {
+func (bs *BinanceFutures) LimitFuturesOrder(currencyPair types.CurrencyPair, contractType, price, amount string, openType int, opt ...types.LimitOrderOptionalParameter) (*types.FutureOrder, error) {
 	orderId, err := bs.PlaceFutureOrder(currencyPair, contractType, price, amount, openType, 0, 10)
-	return &FutureOrder{
+	return &types.FutureOrder{
 		OrderID2:     orderId,
 		Currency:     currencyPair,
 		ContractName: contractType,
@@ -342,9 +344,9 @@ func (bs *BinanceFutures) LimitFuturesOrder(currencyPair CurrencyPair, contractT
 	}, err
 }
 
-func (bs *BinanceFutures) MarketFuturesOrder(currencyPair CurrencyPair, contractType, amount string, openType int) (*FutureOrder, error) {
+func (bs *BinanceFutures) MarketFuturesOrder(currencyPair types.CurrencyPair, contractType, amount string, openType int) (*types.FutureOrder, error) {
 	orderId, err := bs.PlaceFutureOrder(currencyPair, contractType, "", amount, openType, 1, 10)
-	return &FutureOrder{
+	return &types.FutureOrder{
 		OrderID2:     orderId,
 		Currency:     currencyPair,
 		ContractName: contractType,
@@ -353,7 +355,7 @@ func (bs *BinanceFutures) MarketFuturesOrder(currencyPair CurrencyPair, contract
 	}, err
 }
 
-func (bs *BinanceFutures) FutureCancelOrder(currencyPair CurrencyPair, contractType, orderId string) (bool, error) {
+func (bs *BinanceFutures) FutureCancelOrder(currencyPair types.CurrencyPair, contractType, orderId string) (bool, error) {
 	apiPath := "order"
 	symbol, err := bs.adaptToSymbol(currencyPair, contractType)
 	if err != nil {
@@ -371,7 +373,7 @@ func (bs *BinanceFutures) FutureCancelOrder(currencyPair CurrencyPair, contractT
 	bs.base.buildParamsSigned(&param)
 
 	reqUrl := fmt.Sprintf("%s%s?%s", bs.base.apiV1, apiPath, param.Encode())
-	resp, err := HttpDeleteForm(bs.base.httpClient, reqUrl, url.Values{}, map[string]string{"X-MBX-APIKEY": bs.apikey})
+	resp, err := api.HttpDeleteForm(bs.base.httpClient, reqUrl, url.Values{}, map[string]string{"X-MBX-APIKEY": bs.apikey})
 	if err != nil {
 		logger.Errorf("request url: %s", reqUrl)
 		return false, err
@@ -382,7 +384,7 @@ func (bs *BinanceFutures) FutureCancelOrder(currencyPair CurrencyPair, contractT
 	return true, nil
 }
 
-func (bs *BinanceFutures) GetFuturePosition(currencyPair CurrencyPair, contractType string) ([]FuturePosition, error) {
+func (bs *BinanceFutures) GetFuturePosition(currencyPair types.CurrencyPair, contractType string) ([]types.FuturePosition, error) {
 	symbol, err := bs.adaptToSymbol(currencyPair, contractType)
 	if err != nil {
 		return nil, err
@@ -392,7 +394,7 @@ func (bs *BinanceFutures) GetFuturePosition(currencyPair CurrencyPair, contractT
 	bs.base.buildParamsSigned(&params)
 	path := bs.base.apiV1 + "positionRisk?" + params.Encode()
 
-	respBody, err := HttpGet5(bs.base.httpClient, path, map[string]string{"X-MBX-APIKEY": bs.apikey})
+	respBody, err := api.HttpGet5(bs.base.httpClient, path, map[string]string{"X-MBX-APIKEY": bs.apikey})
 	if err != nil {
 		return nil, err
 	}
@@ -400,7 +402,7 @@ func (bs *BinanceFutures) GetFuturePosition(currencyPair CurrencyPair, contractT
 
 	var (
 		positionRiskResponse []PositionRiskResponse
-		positions            []FuturePosition
+		positions            []types.FuturePosition
 	)
 
 	err = json.Unmarshal(respBody, &positionRiskResponse)
@@ -414,7 +416,7 @@ func (bs *BinanceFutures) GetFuturePosition(currencyPair CurrencyPair, contractT
 			continue
 		}
 
-		p := FuturePosition{
+		p := types.FuturePosition{
 			LeverRate:      info.Leverage,
 			Symbol:         currencyPair,
 			ForceLiquPrice: info.LiquidationPrice,
@@ -442,11 +444,11 @@ func (bs *BinanceFutures) GetFuturePosition(currencyPair CurrencyPair, contractT
 	return positions, nil
 }
 
-func (bs *BinanceFutures) GetFutureOrders(orderIds []string, currencyPair CurrencyPair, contractType string) ([]FutureOrder, error) {
+func (bs *BinanceFutures) GetFutureOrders(orderIds []string, currencyPair types.CurrencyPair, contractType string) ([]types.FutureOrder, error) {
 	panic("not supported.")
 }
 
-func (bs *BinanceFutures) GetFutureOrder(orderId string, currencyPair CurrencyPair, contractType string) (*FutureOrder, error) {
+func (bs *BinanceFutures) GetFutureOrder(orderId string, currencyPair types.CurrencyPair, contractType string) (*types.FutureOrder, error) {
 	apiPath := "order"
 	symbol, err := bs.adaptToSymbol(currencyPair, contractType)
 	if err != nil {
@@ -460,7 +462,7 @@ func (bs *BinanceFutures) GetFutureOrder(orderId string, currencyPair CurrencyPa
 	bs.base.buildParamsSigned(&param)
 
 	reqUrl := fmt.Sprintf("%s%s?%s", bs.base.apiV1, apiPath, param.Encode())
-	resp, err := HttpGet5(bs.base.httpClient, reqUrl, map[string]string{"X-MBX-APIKEY": bs.apikey})
+	resp, err := api.HttpGet5(bs.base.httpClient, reqUrl, map[string]string{"X-MBX-APIKEY": bs.apikey})
 	if err != nil {
 		logger.Errorf("request url: %s", reqUrl)
 		return nil, err
@@ -475,7 +477,7 @@ func (bs *BinanceFutures) GetFutureOrder(orderId string, currencyPair CurrencyPa
 		return nil, err
 	}
 
-	return &FutureOrder{
+	return &types.FutureOrder{
 		Currency:     currencyPair,
 		ClientOid:    getOrderInfoResponse.ClientOrderId,
 		OrderID2:     fmt.Sprint(getOrderInfoResponse.OrderId),
@@ -491,7 +493,7 @@ func (bs *BinanceFutures) GetFutureOrder(orderId string, currencyPair CurrencyPa
 	}, nil
 }
 
-func (bs *BinanceFutures) GetUnfinishFutureOrders(currencyPair CurrencyPair, contractType string) ([]FutureOrder, error) {
+func (bs *BinanceFutures) GetUnfinishFutureOrders(currencyPair types.CurrencyPair, contractType string) ([]types.FutureOrder, error) {
 	apiPath := "openOrders"
 	param := url.Values{}
 
@@ -503,7 +505,7 @@ func (bs *BinanceFutures) GetUnfinishFutureOrders(currencyPair CurrencyPair, con
 	param.Set("symbol", symbol)
 	bs.base.buildParamsSigned(&param)
 
-	respbody, err := HttpGet5(bs.base.httpClient, fmt.Sprintf("%s%s?%s", bs.base.apiV1, apiPath, param.Encode()),
+	respbody, err := api.HttpGet5(bs.base.httpClient, fmt.Sprintf("%s%s?%s", bs.base.apiV1, apiPath, param.Encode()),
 		map[string]string{
 			"X-MBX-APIKEY": bs.apikey,
 		})
@@ -514,7 +516,7 @@ func (bs *BinanceFutures) GetUnfinishFutureOrders(currencyPair CurrencyPair, con
 
 	var (
 		openOrderResponse []OrderInfoResponse
-		orders            []FutureOrder
+		orders            []types.FutureOrder
 	)
 
 	err = json.Unmarshal(respbody, &openOrderResponse)
@@ -523,7 +525,7 @@ func (bs *BinanceFutures) GetUnfinishFutureOrders(currencyPair CurrencyPair, con
 	}
 
 	for _, ord := range openOrderResponse {
-		orders = append(orders, FutureOrder{
+		orders = append(orders, types.FutureOrder{
 			Currency:     currencyPair,
 			ClientOid:    ord.ClientOrderId,
 			OrderID:      ord.OrderId,
@@ -543,7 +545,7 @@ func (bs *BinanceFutures) GetUnfinishFutureOrders(currencyPair CurrencyPair, con
 	return orders, nil
 }
 
-func (bs *BinanceFutures) GetFutureOrderHistory(pair CurrencyPair, contractType string, optional ...OptionalParameter) ([]FutureOrder, error) {
+func (bs *BinanceFutures) GetFutureOrderHistory(pair types.CurrencyPair, contractType string, optional ...types.OptionalParameter) ([]types.FutureOrder, error) {
 	panic("implement me")
 }
 
@@ -551,9 +553,9 @@ func (bs *BinanceFutures) GetFee() (float64, error) {
 	panic("not supported.")
 }
 
-func (bs *BinanceFutures) GetContractValue(currencyPair CurrencyPair) (float64, error) {
+func (bs *BinanceFutures) GetContractValue(currencyPair types.CurrencyPair) (float64, error) {
 	switch currencyPair {
-	case BTC_USD:
+	case types.BTC_USD:
 		return 100, nil
 	default:
 		return 10, nil
@@ -564,21 +566,21 @@ func (bs *BinanceFutures) GetDeliveryTime() (int, int, int, int) {
 	panic("not supported.")
 }
 
-func (bs *BinanceFutures) GetKlineRecords(contractType string, currency CurrencyPair, period KlinePeriod, size int, opt ...OptionalParameter) ([]FutureKline, error) {
+func (bs *BinanceFutures) GetKlineRecords(contractType string, currency types.CurrencyPair, period types.KlinePeriod, size int, opt ...types.OptionalParameter) ([]types.FutureKline, error) {
 	panic("not supported.")
 }
 
-func (bs *BinanceFutures) GetTrades(contractType string, currencyPair CurrencyPair, since int64) ([]Trade, error) {
+func (bs *BinanceFutures) GetTrades(contractType string, currencyPair types.CurrencyPair, since int64) ([]types.Trade, error) {
 	panic("not supported.")
 }
 
-func (bs *BinanceFutures) GetFutureEstimatedPrice(currencyPair CurrencyPair) (float64, error) {
+func (bs *BinanceFutures) GetFutureEstimatedPrice(currencyPair types.CurrencyPair) (float64, error) {
 	panic("not supported.")
 }
 
 func (bs *BinanceFutures) GetExchangeInfo() {
 	exchangeInfoUri := bs.base.apiV1 + "exchangeInfo"
-	ret, err := HttpGet5(bs.base.httpClient, exchangeInfoUri, map[string]string{})
+	ret, err := api.HttpGet5(bs.base.httpClient, exchangeInfoUri, map[string]string{})
 	if err != nil {
 		logger.Error("[exchangeInfo] Http Error", err)
 		return
@@ -593,12 +595,12 @@ func (bs *BinanceFutures) GetExchangeInfo() {
 	logger.Debug("[ExchangeInfo]", bs.exchangeInfo)
 }
 
-func (bs *BinanceFutures) adaptToSymbol(pair CurrencyPair, contractType string) (string, error) {
-	if contractType == THIS_WEEK_CONTRACT || contractType == NEXT_WEEK_CONTRACT {
+func (bs *BinanceFutures) adaptToSymbol(pair types.CurrencyPair, contractType string) (string, error) {
+	if contractType == types.THIS_WEEK_CONTRACT || contractType == types.NEXT_WEEK_CONTRACT {
 		return "", errors.New("binance only support contract quarter or bi_quarter")
 	}
 
-	if contractType == SWAP_CONTRACT {
+	if contractType == types.SWAP_CONTRACT {
 		return fmt.Sprintf("%s_PERP", pair.AdaptUsdtToUsd().ToSymbol("")), nil
 	}
 
@@ -619,11 +621,11 @@ func (bs *BinanceFutures) adaptToSymbol(pair CurrencyPair, contractType string) 
 				return "", errors.New("contract status " + info.ContractStatus)
 			}
 
-			if info.ContractType == "CURRENT_QUARTER" && contractType == QUARTER_CONTRACT {
+			if info.ContractType == "CURRENT_QUARTER" && contractType == types.QUARTER_CONTRACT {
 				return info.Symbol, nil
 			}
 
-			if info.ContractType == "NEXT_QUARTER" && contractType == BI_QUARTER_CONTRACT {
+			if info.ContractType == "NEXT_QUARTER" && contractType == types.BI_QUARTER_CONTRACT {
 				return info.Symbol, nil
 			}
 
@@ -636,49 +638,49 @@ func (bs *BinanceFutures) adaptToSymbol(pair CurrencyPair, contractType string) 
 	return "", errors.New("binance not support " + pair.ToSymbol("") + " " + contractType)
 }
 
-func (bs *BinanceFutures) adaptStatus(status string) TradeStatus {
+func (bs *BinanceFutures) adaptStatus(status string) types.TradeStatus {
 	switch status {
 	case "NEW":
-		return ORDER_UNFINISH
+		return types.ORDER_UNFINISH
 	case "CANCELED":
-		return ORDER_CANCEL
+		return types.ORDER_CANCEL
 	case "FILLED":
-		return ORDER_FINISH
+		return types.ORDER_FINISH
 	case "PARTIALLY_FILLED":
-		return ORDER_PART_FINISH
+		return types.ORDER_PART_FINISH
 	case "PENDING_CANCEL":
-		return ORDER_CANCEL_ING
+		return types.ORDER_CANCEL_ING
 	case "REJECTED":
-		return ORDER_REJECT
+		return types.ORDER_REJECT
 	default:
-		return ORDER_UNFINISH
+		return types.ORDER_UNFINISH
 	}
 }
 
 func (bs *BinanceFutures) adaptOType(side string, positionSide string) int {
 	if positionSide == "BOTH" && side == "SELL" {
-		return OPEN_SELL
+		return types.OPEN_SELL
 	}
 
 	if positionSide == "BOTH" && side == "BUY" {
-		return OPEN_BUY
+		return types.OPEN_BUY
 	}
 
 	if positionSide == "LONG" {
 		switch side {
 		case "BUY":
-			return OPEN_BUY
+			return types.OPEN_BUY
 		default:
-			return CLOSE_BUY
+			return types.CLOSE_BUY
 		}
 	}
 
 	if positionSide == "SHORT" {
 		switch side {
 		case "SELL":
-			return OPEN_SELL
+			return types.OPEN_SELL
 		default:
-			return CLOSE_SELL
+			return types.CLOSE_SELL
 		}
 	}
 

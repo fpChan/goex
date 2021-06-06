@@ -1,8 +1,8 @@
 package builder
 
 import (
-	"github.com/fpChan/goex"
 	"github.com/fpChan/goex/internal/logger"
+	"github.com/fpChan/goex/types"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"testing"
@@ -16,33 +16,27 @@ func init() {
 }
 
 func TestAPIBuilder_Build(t *testing.T) {
-	assert.Equal(t, builder.APIKey("").APISecretkey("").Build(goex.OKCOIN_COM).GetExchangeName(), goex.OKCOIN_COM)
-	assert.Equal(t, builder.APIKey("").APISecretkey("").Build(goex.HUOBI_PRO).GetExchangeName(), goex.HUOBI_PRO)
-	assert.Equal(t, builder.APIKey("").APISecretkey("").Build(goex.ZB).GetExchangeName(), goex.ZB)
-	assert.Equal(t, builder.APIKey("").APISecretkey("").Build(goex.BIGONE).GetExchangeName(), goex.BIGONE)
-	assert.Equal(t, builder.APIKey("").APISecretkey("").Build(goex.OKEX).GetExchangeName(), goex.OKEX)
-	assert.Equal(t, builder.APIKey("").APISecretkey("").Build(goex.POLONIEX).GetExchangeName(), goex.POLONIEX)
-	assert.Equal(t, builder.APIKey("").APISecretkey("").Build(goex.KRAKEN).GetExchangeName(), goex.KRAKEN)
-	assert.Equal(t, builder.APIKey("").APISecretkey("").Build(goex.FCOIN_MARGIN).GetExchangeName(), goex.FCOIN_MARGIN)
-	assert.Equal(t, builder.APIKey("").APISecretkey("").BuildFuture(goex.HBDM).GetExchangeName(), goex.HBDM)
+	assert.Equal(t, builder.APIKey("").APISecretkey("").Build(types.OKCOIN_COM).GetExchangeName(), types.OKCOIN_COM)
+	assert.Equal(t, builder.APIKey("").APISecretkey("").Build(types.HUOBI_PRO).GetExchangeName(), types.HUOBI_PRO)
+	//assert.Equal(t, builder.APIKey("").APISecretkey("").BuildFuture(types.HBDM).GetExchangeName(), goex.HBDM)
 }
 
 func TestAPIBuilder_BuildSpotWs(t *testing.T) {
 	//os.Setenv("HTTPS_PROXY" , "socks5://127.0.0.1:1080")
-	wsApi, _ := builder.BuildSpotWs(goex.OKEX_V3)
-	wsApi.DepthCallback(func(depth *goex.Depth) {
+	wsApi, _ := builder.BuildSpotWs(types.OKEX_V3)
+	wsApi.DepthCallback(func(depth *types.Depth) {
 		log.Println(depth)
 	})
-	wsApi.SubscribeDepth(goex.BTC_USDT)
+	wsApi.SubscribeDepth(types.BTC_USDT)
 	time.Sleep(time.Minute)
 }
 
 func TestAPIBuilder_BuildFuturesWs(t *testing.T) {
 	//os.Setenv("HTTPS_PROXY" , "socks5://127.0.0.1:1080")
-	wsApi, _ := builder.BuildFuturesWs(goex.OKEX_V3)
-	wsApi.DepthCallback(func(depth *goex.Depth) {
+	wsApi, _ := builder.BuildFuturesWs(types.OKEX_V3)
+	wsApi.DepthCallback(func(depth *types.Depth) {
 		log.Println(depth)
 	})
-	wsApi.SubscribeDepth(goex.BTC_USD, goex.QUARTER_CONTRACT)
+	wsApi.SubscribeDepth(types.BTC_USD, types.QUARTER_CONTRACT)
 	time.Sleep(time.Minute)
 }

@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/fpChan/goex"
+	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/internal/logger"
+	"github.com/fpChan/goex/types"
 	"net/url"
 	"strings"
 )
@@ -14,22 +16,22 @@ type Wallet struct {
 	pro *HuoBiPro
 }
 
-func NewWallet(c *APIConfig) *Wallet {
+func NewWallet(c *types.APIConfig) *Wallet {
 	return &Wallet{pro: NewHuobiWithConfig(c)}
 }
 
 //获取钱包资产
-func (w *Wallet) GetAccount() (*Account, error) {
+func (w *Wallet) GetAccount() (*types.Account, error) {
 	return nil, errors.New("not implement")
 }
 
-func (w *Wallet) Withdrawal(param WithdrawParameter) (withdrawId string, err error) {
+func (w *Wallet) Withdrawal(param types.WithdrawParameter) (withdrawId string, err error) {
 	return "", errors.New("not implement")
 }
 
-func (w *Wallet) Transfer(param TransferParameter) error {
-	if param.From == SUB_ACCOUNT || param.To == SUB_ACCOUNT ||
-		param.From == SPOT_MARGIN || param.To == SPOT_MARGIN {
+func (w *Wallet) Transfer(param types.TransferParameter) error {
+	if param.From == types.SUB_ACCOUNT || param.To == types.SUB_ACCOUNT ||
+		param.From == types.SPOT_MARGIN || param.To == types.SPOT_MARGIN {
 		return errors.New("not implements")
 	}
 
@@ -39,42 +41,42 @@ func (w *Wallet) Transfer(param TransferParameter) error {
 
 	path := ""
 
-	if (param.From == SPOT && param.To == FUTURE) ||
-		(param.From == FUTURE && param.To == SPOT) {
+	if (param.From == types.SPOT && param.To == types.FUTURE) ||
+		(param.From == types.FUTURE && param.To == types.SPOT) {
 		path = "/v1/futures/transfer"
 	}
 
-	if param.From == SWAP || param.From == SWAP_USDT ||
-		param.To == SWAP || param.To == SWAP_USDT {
+	if param.From == types.SWAP || param.From == types.SWAP_USDT ||
+		param.To == types.SWAP || param.To == types.SWAP_USDT {
 		path = "/v2/account/transfer"
 	}
 
-	if param.From == SPOT && param.To == FUTURE {
+	if param.From == types.SPOT && param.To == types.FUTURE {
 		httpParam.Set("type", "pro-to-futures")
 	}
 
-	if param.From == FUTURE && param.To == SPOT {
+	if param.From == types.FUTURE && param.To == types.SPOT {
 		httpParam.Set("type", "futures-to-pro")
 	}
 
-	if param.From == SPOT && param.To == SWAP {
+	if param.From == types.SPOT && param.To == types.SWAP {
 		httpParam.Set("from", "spot")
 		httpParam.Set("to", "swap")
 	}
 
-	if param.From == SPOT && param.To == SWAP_USDT {
+	if param.From == types.SPOT && param.To == types.SWAP_USDT {
 		httpParam.Set("currency", "usdt")
 		httpParam.Set("from", "spot")
 		httpParam.Set("to", "linear-swap")
 		httpParam.Set("margin-account", fmt.Sprintf("%s-usdt", strings.ToLower(param.Currency)))
 	}
 
-	if param.From == SWAP && param.To == SPOT {
+	if param.From == types.SWAP && param.To == types.SPOT {
 		httpParam.Set("from", "swap")
 		httpParam.Set("to", "spot")
 	}
 
-	if param.From == SWAP_USDT && param.To == SPOT {
+	if param.From == types.SWAP_USDT && param.To == types.SPOT {
 		httpParam.Set("currency", "usdt")
 		httpParam.Set("from", "linear-swap")
 		httpParam.Set("to", "spot")
@@ -85,7 +87,7 @@ func (w *Wallet) Transfer(param TransferParameter) error {
 	w.pro.buildPostForm("POST", path, &httpParam)
 
 	postJsonParam, _ := ValuesToJson(httpParam)
-	responseBody, err := HttpPostForm3(w.pro.httpClient,
+	responseBody, err := api.HttpPostForm3(w.pro.httpClient,
 		fmt.Sprintf("%s%s?%s", w.pro.baseUrl, path, httpParam.Encode()),
 		string(postJsonParam),
 		map[string]string{"Content-Type": "application/json", "Accept-Language": "zh-cn"})
@@ -115,10 +117,10 @@ func (w *Wallet) Transfer(param TransferParameter) error {
 	return errors.New(string(responseBody))
 }
 
-func (w *Wallet) GetWithDrawHistory(currency *Currency) ([]DepositWithdrawHistory, error) {
+func (w *Wallet) GetWithDrawHistory(currency *types.Currency) ([]types.DepositWithdrawHistory, error) {
 	return nil, errors.New("not implement")
 }
 
-func (w *Wallet) GetDepositHistory(currency *Currency) ([]DepositWithdrawHistory, error) {
+func (w *Wallet) GetDepositHistory(currency *types.Currency) ([]types.DepositWithdrawHistory, error) {
 	return nil, errors.New("not implement")
 }

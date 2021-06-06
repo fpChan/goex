@@ -1,7 +1,7 @@
 package binance
 
 import (
-	"github.com/fpChan/goex"
+	"github.com/fpChan/goex/types"
 	"net/http"
 	"testing"
 )
@@ -9,7 +9,7 @@ import (
 var wallet *Wallet
 
 func init() {
-	wallet = NewWallet(&goex.APIConfig{
+	wallet = NewWallet(&types.APIConfig{
 		HttpClient:   http.DefaultClient,
 		ApiKey:       "",
 		ApiSecretKey: "",
@@ -17,10 +17,10 @@ func init() {
 }
 
 func TestWallet_Transfer(t *testing.T) {
-	t.Log(wallet.Transfer(goex.TransferParameter{
+	t.Log(wallet.Transfer(types.TransferParameter{
 		Currency: "USDT",
-		From:     goex.SPOT,
-		To:       goex.SWAP_USDT,
+		From:     types.SPOT,
+		To:       types.SWAP_USDT,
 		Amount:   100,
 	}))
 }

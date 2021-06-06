@@ -1,8 +1,8 @@
 package okex
 
 import (
-	"github.com/fpChan/goex"
 	"github.com/fpChan/goex/internal/logger"
+	"github.com/fpChan/goex/types"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
@@ -14,7 +14,7 @@ func init() {
 }
 
 //
-var config2 = &goex.APIConfig{
+var config2 = &types.APIConfig{
 	Endpoint:   "https://www.okex.me",
 	HttpClient: http.DefaultClient,
 }
@@ -26,70 +26,70 @@ func TestOKExSpot_GetAccount(t *testing.T) {
 }
 
 func TestOKExSpot_BatchPlaceOrders(t *testing.T) {
-	t.Log(okex.OKExSpot.BatchPlaceOrders([]goex.Order{
-		goex.Order{
+	t.Log(okex.OKExSpot.BatchPlaceOrders([]types.Order{
+		types.Order{
 			Cid:       okex.UUID(),
-			Currency:  goex.XRP_USD,
+			Currency:  types.XRP_USD,
 			Amount:    10,
 			Price:     0.32,
-			Side:      goex.BUY,
+			Side:      types.BUY,
 			Type:      "limit",
-			OrderType: goex.ORDER_FEATURE_ORDINARY,
+			OrderType: types.ORDER_FEATURE_ORDINARY,
 		},
 		{
 			Cid:       okex.UUID(),
-			Currency:  goex.EOS_USD,
+			Currency:  types.EOS_USD,
 			Amount:    1,
 			Price:     5.2,
-			Side:      goex.BUY,
-			OrderType: goex.ORDER_FEATURE_ORDINARY,
+			Side:      types.BUY,
+			OrderType: types.ORDER_FEATURE_ORDINARY,
 		},
-		goex.Order{
+		types.Order{
 			Cid:       okex.UUID(),
-			Currency:  goex.XRP_USD,
+			Currency:  types.XRP_USD,
 			Amount:    10,
 			Price:     0.33,
-			Side:      goex.BUY,
+			Side:      types.BUY,
 			Type:      "limit",
-			OrderType: goex.ORDER_FEATURE_ORDINARY,
+			OrderType: types.ORDER_FEATURE_ORDINARY,
 		}}))
 }
 
 func TestOKExSpot_LimitBuy(t *testing.T) {
-	t.Log(okex.OKExSpot.LimitBuy("0.001", "9910", goex.BTC_USD))
+	t.Log(okex.OKExSpot.LimitBuy("0.001", "9910", types.BTC_USD))
 }
 
 func TestOKExSpot_CancelOrder(t *testing.T) {
-	t.Log(okex.OKExSpot.CancelOrder("2a647e51435647708b1c840802bf70e5", goex.BTC_USD))
+	t.Log(okex.OKExSpot.CancelOrder("2a647e51435647708b1c840802bf70e5", types.BTC_USD))
 
 }
 
 func TestOKExSpot_GetOneOrder(t *testing.T) {
-	t.Log(okex.OKExSpot.GetOneOrder("5502594029936640", goex.BTC_USD))
+	t.Log(okex.OKExSpot.GetOneOrder("5502594029936640", types.BTC_USD))
 }
 
 func TestOKExSpot_GetUnfinishOrders(t *testing.T) {
-	t.Log(okex.OKExSpot.GetUnfinishOrders(goex.EOS_BTC))
+	t.Log(okex.OKExSpot.GetUnfinishOrders(types.EOS_USD))
 }
 
 func TestOKExSpot_GetTicker(t *testing.T) {
-	t.Log(okex.OKExSpot.GetTicker(goex.BTC_USD))
+	t.Log(okex.OKExSpot.GetTicker(types.BTC_USD))
 }
 
 func TestOKExSpot_GetDepth(t *testing.T) {
-	dep, err := okex.OKExSpot.GetDepth(2, goex.EOS_BTC)
+	dep, err := okex.OKExSpot.GetDepth(2, types.EOS_USD)
 	assert.Nil(t, err)
 	t.Log(dep.AskList)
 	t.Log(dep.BidList)
 }
 
 func TestOKExFuture_GetFutureTicker(t *testing.T) {
-	t.Log(okex.OKExFuture.GetFutureTicker(goex.BTC_USD, "BTC-USD-190927"))
-	t.Log(okex.OKExFuture.GetFutureTicker(goex.BTC_USD, goex.QUARTER_CONTRACT))
-	t.Log(okex.OKExFuture.GetFutureDepth(goex.BTC_USD, goex.QUARTER_CONTRACT, 2))
-	t.Log(okex.OKExFuture.GetContractValue(goex.XRP_USD))
-	t.Log(okex.OKExFuture.GetFutureIndex(goex.EOS_USD))
-	t.Log(okex.OKExFuture.GetFutureEstimatedPrice(goex.EOS_USD))
+	t.Log(okex.OKExFuture.GetFutureTicker(types.BTC_USD, "BTC-USD-190927"))
+	t.Log(okex.OKExFuture.GetFutureTicker(types.BTC_USD, types.QUARTER_CONTRACT))
+	t.Log(okex.OKExFuture.GetFutureDepth(types.BTC_USD, types.QUARTER_CONTRACT, 2))
+	t.Log(okex.OKExFuture.GetContractValue(types.XRP_USD))
+	t.Log(okex.OKExFuture.GetFutureIndex(types.EOS_USD))
+	t.Log(okex.OKExFuture.GetFutureEstimatedPrice(types.EOS_USD))
 }
 
 func TestOKExFuture_GetFutureUserinfo(t *testing.T) {
@@ -97,38 +97,38 @@ func TestOKExFuture_GetFutureUserinfo(t *testing.T) {
 }
 
 func TestOKExFuture_GetFuturePosition(t *testing.T) {
-	t.Log(okex.OKExFuture.GetFuturePosition(goex.EOS_USD, goex.QUARTER_CONTRACT))
+	t.Log(okex.OKExFuture.GetFuturePosition(types.EOS_USD, types.QUARTER_CONTRACT))
 }
 
 func TestOKExFuture_PlaceFutureOrder(t *testing.T) {
-	t.Log(okex.OKExFuture.PlaceFutureOrder(goex.EOS_USD, goex.THIS_WEEK_CONTRACT, "5.8", "1", goex.OPEN_BUY, 0, 10))
+	t.Log(okex.OKExFuture.PlaceFutureOrder(types.EOS_USD, types.THIS_WEEK_CONTRACT, "5.8", "1", types.OPEN_BUY, 0, 10))
 }
 
 func TestOKExFuture_PlaceFutureOrder2(t *testing.T) {
-	t.Log(okex.OKExFuture.PlaceFutureOrder2(0, &goex.FutureOrder{
-		Currency:     goex.EOS_USD,
-		ContractName: goex.QUARTER_CONTRACT,
-		OType:        goex.OPEN_BUY,
-		OrderType:    goex.ORDER_FEATURE_ORDINARY,
+	t.Log(okex.OKExFuture.PlaceFutureOrder2(0, &types.FutureOrder{
+		Currency:     types.EOS_USD,
+		ContractName: types.QUARTER_CONTRACT,
+		OType:        types.OPEN_BUY,
+		OrderType:    types.ORDER_FEATURE_ORDINARY,
 		Price:        5.9,
 		Amount:       10,
 		LeverRate:    10}))
 }
 
 func TestOKExFuture_FutureCancelOrder(t *testing.T) {
-	t.Log(okex.OKExFuture.FutureCancelOrder(goex.EOS_USD, goex.QUARTER_CONTRACT, "e88bd3361de94512b8acaf9aa154f95a"))
+	t.Log(okex.OKExFuture.FutureCancelOrder(types.EOS_USD, types.QUARTER_CONTRACT, "e88bd3361de94512b8acaf9aa154f95a"))
 }
 
 func TestOKExFuture_GetFutureOrder(t *testing.T) {
-	t.Log(okex.OKExFuture.GetFutureOrder("3145664744431616", goex.EOS_USD, goex.QUARTER_CONTRACT))
+	t.Log(okex.OKExFuture.GetFutureOrder("3145664744431616", types.EOS_USD, types.QUARTER_CONTRACT))
 }
 
 func TestOKExFuture_GetUnfinishFutureOrders(t *testing.T) {
-	t.Log(okex.OKExFuture.GetUnfinishFutureOrders(goex.EOS_USD, goex.QUARTER_CONTRACT))
+	t.Log(okex.OKExFuture.GetUnfinishFutureOrders(types.EOS_USD, types.QUARTER_CONTRACT))
 }
 
 func TestOKExFuture_MarketCloseAllPosition(t *testing.T) {
-	t.Log(okex.OKExFuture.MarketCloseAllPosition(goex.BTC_USD, goex.THIS_WEEK_CONTRACT, goex.CLOSE_BUY))
+	t.Log(okex.OKExFuture.MarketCloseAllPosition(types.BTC_USD, types.THIS_WEEK_CONTRACT, types.CLOSE_BUY))
 }
 
 func TestOKExFuture_GetRate(t *testing.T) {
@@ -136,8 +136,8 @@ func TestOKExFuture_GetRate(t *testing.T) {
 }
 
 func TestOKExFuture_GetKlineRecords(t *testing.T) {
-	since := time.Now().Add(-24 * time.Hour).Unix()
-	kline, err := okex.OKExFuture.GetKlineRecords(goex.QUARTER_CONTRACT, goex.BTC_USD, goex.KLINE_PERIOD_4H, 0, int(since))
+	time.Now().Add(-24 * time.Hour).Unix()
+	kline, err := okex.OKExFuture.GetKlineRecords(types.QUARTER_CONTRACT, types.BTC_USD, types.KLINE_PERIOD_4H, 0)
 	assert.Nil(t, err)
 	for _, k := range kline {
 		t.Logf("%+v", k.Kline)
@@ -169,7 +169,7 @@ func TestOKExWallet_GetAccount(t *testing.T) {
 //}
 
 func TestOKExWallet_GetDepositAddress(t *testing.T) {
-	t.Log(okex.OKExWallet.GetDepositAddress(goex.BTC))
+	t.Log(okex.OKExWallet.GetDepositAddress(types.BTC))
 }
 
 func TestOKExWallet_GetWithDrawalFee(t *testing.T) {
@@ -177,7 +177,7 @@ func TestOKExWallet_GetWithDrawalFee(t *testing.T) {
 }
 
 func TestOKExWallet_GetDepositHistory(t *testing.T) {
-	t.Log(okex.OKExWallet.GetDepositHistory(&goex.BTC))
+	t.Log(okex.OKExWallet.GetDepositHistory(&types.BTC))
 }
 
 func TestOKExWallet_GetWithDrawalHistory(t *testing.T) {
@@ -185,47 +185,47 @@ func TestOKExWallet_GetWithDrawalHistory(t *testing.T) {
 }
 
 func TestOKExMargin_GetMarginAccount(t *testing.T) {
-	t.Log(okex.OKExMargin.GetMarginAccount(goex.EOS_USDT))
+	t.Log(okex.OKExMargin.GetMarginAccount(types.EOS_USDT))
 }
 
 func TestOKExMargin_Borrow(t *testing.T) {
-	t.Log(okex.OKExMargin.Borrow(goex.BorrowParameter{
-		Currency:     goex.EOS,
-		CurrencyPair: goex.EOS_USDT,
+	t.Log(okex.OKExMargin.Borrow(types.BorrowParameter{
+		Currency:     types.EOS,
+		CurrencyPair: types.EOS_USDT,
 		Amount:       10,
 	}))
 }
 
 func TestOKExMargin_Repayment(t *testing.T) {
-	t.Log(okex.OKExMargin.Repayment(goex.RepaymentParameter{
-		BorrowParameter: goex.BorrowParameter{
-			Currency:     goex.EOS,
-			CurrencyPair: goex.EOS_USDT,
+	t.Log(okex.OKExMargin.Repayment(types.RepaymentParameter{
+		BorrowParameter: types.BorrowParameter{
+			Currency:     types.EOS,
+			CurrencyPair: types.EOS_USDT,
 			Amount:       10},
 		BorrowId: "123"}))
 }
 
 func TestOKExMargin_PlaceOrder(t *testing.T) {
-	t.Log(okex.OKExMargin.PlaceOrder(&goex.Order{
-		Currency:  goex.EOS_USDT,
+	t.Log(okex.OKExMargin.PlaceOrder(&types.Order{
+		Currency:  types.EOS_USDT,
 		Amount:    0.2,
 		Price:     6,
 		Type:      "limit",
-		OrderType: goex.ORDER_FEATURE_ORDINARY,
-		Side:      goex.SELL,
+		OrderType: types.ORDER_FEATURE_ORDINARY,
+		Side:      types.SELL,
 	}))
 }
 
 func TestOKExMargin_GetUnfinishOrders(t *testing.T) {
-	t.Log(okex.OKExMargin.GetUnfinishOrders(goex.EOS_USDT))
+	t.Log(okex.OKExMargin.GetUnfinishOrders(types.EOS_USDT))
 }
 
 func TestOKExMargin_CancelOrder(t *testing.T) {
-	t.Log(okex.OKExMargin.CancelOrder("3174778420532224", goex.EOS_USDT))
+	t.Log(okex.OKExMargin.CancelOrder("3174778420532224", types.EOS_USDT))
 }
 
 func TestOKExMargin_GetOneOrder(t *testing.T) {
-	t.Log(okex.OKExMargin.GetOneOrder("3174778420532224", goex.EOS_USDT))
+	t.Log(okex.OKExMargin.GetOneOrder("3174778420532224", types.EOS_USDT))
 }
 
 func TestOKExSpot_GetCurrenciesPrecision(t *testing.T) {
@@ -233,7 +233,7 @@ func TestOKExSpot_GetCurrenciesPrecision(t *testing.T) {
 }
 
 func TestOKExSpot_GetOrderHistorys(t *testing.T) {
-	orders, err := okex.OKExSpot.GetOrderHistorys(goex.NewCurrencyPair2("DASH_USDT"))
+	orders, err := okex.OKExSpot.GetOrderHistorys(types.NewCurrencyPair2("DASH_USDT"))
 	if err != nil {
 		t.Log(err)
 		t.FailNow()

@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/internal/logger"
+	"github.com/fpChan/goex/types"
 	"net/http"
 	"net/url"
 	"sort"
@@ -15,7 +17,7 @@ import (
 )
 
 type Hbdm struct {
-	config *APIConfig
+	config *types.APIConfig
 }
 
 type OrderInfo struct {
@@ -55,7 +57,7 @@ const (
 )
 
 var (
-	FuturesContractInfos []FuturesContractInfo
+	FuturesContractInfos []types.FuturesContractInfo
 )
 
 func hbdmInit() {
@@ -83,7 +85,7 @@ func hbdmInit() {
 					} `json:"data"`
 				}
 				urlPath := "http://api.hbdm.pro/api/v1/contract_contract_info"
-				respBody, err := HttpGet5(http.DefaultClient, urlPath, map[string]string{})
+				respBody, err := api.HttpGet5(http.DefaultClient, urlPath, map[string]string{})
 				if err != nil {
 					logger.Error("[hbdm] get contract info error=", err)
 					goto reset
@@ -95,8 +97,8 @@ func hbdmInit() {
 				}
 				FuturesContractInfos = FuturesContractInfos[:0]
 				for _, info := range response.Data {
-					FuturesContractInfos = append(FuturesContractInfos, FuturesContractInfo{
-						TickSize: &TickSize{
+					FuturesContractInfos = append(FuturesContractInfos, types.FuturesContractInfo{
+						TickSize: &types.TickSize{
 							InstrumentID:    info.ContractCode,
 							UnderlyingIndex: info.Symbol,
 							QuoteCurrency:   "",
@@ -118,7 +120,7 @@ func hbdmInit() {
 	}()
 }
 
-func NewHbdm(conf *APIConfig) *Hbdm {
+func NewHbdm(conf *types.APIConfig) *Hbdm {
 	if conf.Endpoint == "" {
 		conf.Endpoint = defaultBaseUrl
 	}
@@ -130,10 +132,10 @@ func NewHbdm(conf *APIConfig) *Hbdm {
 }
 
 func (dm *Hbdm) GetExchangeName() string {
-	return HBDM
+	return "HBDM"
 }
 
-func (dm *Hbdm) GetFutureUserinfo(currencyPair ...CurrencyPair) (*FutureAccount, error) {
+func (dm *Hbdm) GetFutureUserinfo(currencyPair ...types.CurrencyPair) (*types.FutureAccount, error) {
 	path := "/api/v1/contract_account_info"
 	var data []struct {
 		Symbol            string  `json:"symbol"`
@@ -155,11 +157,11 @@ func (dm *Hbdm) GetFutureUserinfo(currencyPair ...CurrencyPair) (*FutureAccount,
 		return nil, err
 	}
 
-	acc := new(FutureAccount)
-	acc.FutureSubAccounts = make(map[Currency]FutureSubAccount, 4)
+	acc := new(types.FutureAccount)
+	acc.FutureSubAccounts = make(map[types.Currency]types.FutureSubAccount, 4)
 	for _, sub := range data {
-		subAcc := FutureSubAccount{
-			Currency:      NewCurrency(sub.Symbol, ""),
+		subAcc := types.FutureSubAccount{
+			Currency:      types.NewCurrency(sub.Symbol, ""),
 			AccountRights: sub.MarginBalance,
 			KeepDeposit:   sub.MarginPosition,
 			ProfitReal:    sub.ProfitReal,
@@ -171,7 +173,7 @@ func (dm *Hbdm) GetFutureUserinfo(currencyPair ...CurrencyPair) (*FutureAccount,
 	return acc, nil
 }
 
-func (dm *Hbdm) GetFuturePosition(currencyPair CurrencyPair, contractType string) ([]FuturePosition, error) {
+func (dm *Hbdm) GetFuturePosition(currencyPair types.CurrencyPair, contractType string) ([]types.FuturePosition, error) {
 	var data []struct {
 		Symbol         string  `json:"symbol"`
 		ContractCode   string  `json:"contract_code"`
@@ -201,13 +203,13 @@ func (dm *Hbdm) GetFuturePosition(currencyPair CurrencyPair, contractType string
 	//	log.Println(data)
 
 	var (
-		positions   []FuturePosition
-		positionMap = make(map[string]FuturePosition, 1)
+		positions   []types.FuturePosition
+		positionMap = make(map[string]types.FuturePosition, 1)
 	)
 
 	for _, d := range data {
 		if d.ContractType == "next_quarter" {
-			d.ContractType = BI_QUARTER_CONTRACT
+			d.ContractType = types.BI_QUARTER_CONTRACT
 		}
 
 		if d.ContractType != contractType {
@@ -272,12 +274,12 @@ func (dm *Hbdm) GetFuturePosition(currencyPair CurrencyPair, contractType string
 	return positions, nil
 }
 
-func (dm *Hbdm) PlaceFutureOrder(currencyPair CurrencyPair, contractType, price, amount string, openType, matchPrice int, leverRate float64) (string, error) {
+func (dm *Hbdm) PlaceFutureOrder(currencyPair types.CurrencyPair, contractType, price, amount string, openType, matchPrice int, leverRate float64) (string, error) {
 	fOrder, err := dm.PlaceFutureOrder2(currencyPair, contractType, price, amount, openType, matchPrice, leverRate)
 	return fOrder.OrderID2, err
 }
 
-func (dm *Hbdm) PlaceFutureOrder2(currencyPair CurrencyPair, contractType, price, amount string, openType, matchPrice int, leverRate float64, opt ...LimitOrderOptionalParameter) (*FutureOrder, error) {
+func (dm *Hbdm) PlaceFutureOrder2(currencyPair types.CurrencyPair, contractType, price, amount string, openType, matchPrice int, leverRate float64, opt ...types.LimitOrderOptionalParameter) (*types.FutureOrder, error) {
 	var data struct {
 		OrderId  int64 `json:"order_id"`
 		COrderId int64 `json:"client_order_id"`
@@ -299,11 +301,11 @@ func (dm *Hbdm) PlaceFutureOrder2(currencyPair CurrencyPair, contractType, price
 		orderPriceType := "limit"
 		if len(opt) > 0 {
 			switch opt[0] {
-			case Fok:
+			case types.Fok:
 				orderPriceType = "fok"
-			case Ioc:
+			case types.Ioc:
 				orderPriceType = "ioc"
-			case PostOnly:
+			case types.PostOnly:
 				orderPriceType = "post_only"
 			}
 		}
@@ -317,7 +319,7 @@ func (dm *Hbdm) PlaceFutureOrder2(currencyPair CurrencyPair, contractType, price
 
 	err := dm.doRequest(path, params, &data)
 
-	fOrd := &FutureOrder{
+	fOrd := &types.FutureOrder{
 		ClientOid:    params.Get("client_order_id"),
 		ContractName: contractType,
 		Currency:     currencyPair,
@@ -335,15 +337,15 @@ func (dm *Hbdm) PlaceFutureOrder2(currencyPair CurrencyPair, contractType, price
 	return fOrd, err
 }
 
-func (dm *Hbdm) LimitFuturesOrder(currencyPair CurrencyPair, contractType, price, amount string, openType int, opt ...LimitOrderOptionalParameter) (*FutureOrder, error) {
+func (dm *Hbdm) LimitFuturesOrder(currencyPair types.CurrencyPair, contractType, price, amount string, openType int, opt ...types.LimitOrderOptionalParameter) (*types.FutureOrder, error) {
 	return dm.PlaceFutureOrder2(currencyPair, contractType, price, amount, openType, 0, dm.config.Lever)
 }
 
-func (dm *Hbdm) MarketFuturesOrder(currencyPair CurrencyPair, contractType, amount string, openType int) (*FutureOrder, error) {
+func (dm *Hbdm) MarketFuturesOrder(currencyPair types.CurrencyPair, contractType, amount string, openType int) (*types.FutureOrder, error) {
 	return dm.PlaceFutureOrder2(currencyPair, contractType, "0", amount, openType, 1, dm.config.Lever)
 }
 
-func (dm *Hbdm) FutureCancelOrder(currencyPair CurrencyPair, contractType, orderId string) (bool, error) {
+func (dm *Hbdm) FutureCancelOrder(currencyPair types.CurrencyPair, contractType, orderId string) (bool, error) {
 	var data struct {
 		Successes string `json:"successes"`
 		Errors    []struct {
@@ -370,7 +372,7 @@ func (dm *Hbdm) FutureCancelOrder(currencyPair CurrencyPair, contractType, order
 	}
 }
 
-func (dm *Hbdm) GetUnfinishFutureOrders(currencyPair CurrencyPair, contractType string) ([]FutureOrder, error) {
+func (dm *Hbdm) GetUnfinishFutureOrders(currencyPair types.CurrencyPair, contractType string) ([]types.FutureOrder, error) {
 	var data struct {
 		Orders      []OrderInfo `json:"orders"`
 		TotalPage   int         `json:"total_page"`
@@ -388,10 +390,10 @@ func (dm *Hbdm) GetUnfinishFutureOrders(currencyPair CurrencyPair, contractType 
 	}
 	//log.Println(data)
 
-	var ords []FutureOrder
+	var ords []types.FutureOrder
 	for _, ord := range data.Orders {
 
-		ords = append(ords, FutureOrder{
+		ords = append(ords, types.FutureOrder{
 			ContractName: contractType,
 			Currency:     currencyPair,
 			OType:        dm.adaptOffsetDirectionToOpenType(ord.Offset, ord.Direction),
@@ -410,7 +412,7 @@ func (dm *Hbdm) GetUnfinishFutureOrders(currencyPair CurrencyPair, contractType 
 	return ords, err
 }
 
-func (dm *Hbdm) GetFutureOrder(orderId string, currencyPair CurrencyPair, contractType string) (*FutureOrder, error) {
+func (dm *Hbdm) GetFutureOrder(orderId string, currencyPair types.CurrencyPair, contractType string) (*types.FutureOrder, error) {
 	ords, err := dm.GetFutureOrders([]string{orderId}, currencyPair, contractType)
 	if err != nil {
 		return nil, err
@@ -422,7 +424,7 @@ func (dm *Hbdm) GetFutureOrder(orderId string, currencyPair CurrencyPair, contra
 	return nil, errors.New("not found order")
 }
 
-func (dm *Hbdm) GetFutureOrders(orderIds []string, currencyPair CurrencyPair, contractType string) ([]FutureOrder, error) {
+func (dm *Hbdm) GetFutureOrders(orderIds []string, currencyPair types.CurrencyPair, contractType string) ([]types.FutureOrder, error) {
 	var data []OrderInfo
 	path := "/api/v1/contract_order_info"
 	params := &url.Values{}
@@ -436,9 +438,9 @@ func (dm *Hbdm) GetFutureOrders(orderIds []string, currencyPair CurrencyPair, co
 	}
 	//	log.Println(data)
 
-	var ords []FutureOrder
+	var ords []types.FutureOrder
 	for _, ord := range data {
-		ords = append(ords, FutureOrder{
+		ords = append(ords, types.FutureOrder{
 			ContractName: contractType,
 			Currency:     currencyPair,
 			OType:        dm.adaptOffsetDirectionToOpenType(ord.Offset, ord.Direction),
@@ -458,7 +460,7 @@ func (dm *Hbdm) GetFutureOrders(orderIds []string, currencyPair CurrencyPair, co
 
 }
 
-func (dm *Hbdm) GetFutureOrderHistory(pair CurrencyPair, contractType string, optional ...OptionalParameter) ([]FutureOrder, error) {
+func (dm *Hbdm) GetFutureOrderHistory(pair types.CurrencyPair, contractType string, optional ...types.OptionalParameter) ([]types.FutureOrder, error) {
 	path := "/api/v1/contract_hisorders_exact"
 
 	param := url.Values{}
@@ -481,9 +483,9 @@ func (dm *Hbdm) GetFutureOrderHistory(pair CurrencyPair, contractType string, op
 		return nil, err
 	}
 
-	var ords []FutureOrder
+	var ords []types.FutureOrder
 	for _, ord := range data.Orders {
-		ords = append(ords, FutureOrder{
+		ords = append(ords, types.FutureOrder{
 			ContractName: ord.ContractType,
 			Currency:     pair,
 			OType:        dm.adaptOffsetDirectionToOpenType(ord.Offset, ord.Direction),
@@ -503,17 +505,17 @@ func (dm *Hbdm) GetFutureOrderHistory(pair CurrencyPair, contractType string, op
 	return ords, nil
 }
 
-func (dm *Hbdm) GetContractValue(currencyPair CurrencyPair) (float64, error) {
+func (dm *Hbdm) GetContractValue(currencyPair types.CurrencyPair) (float64, error) {
 	switch currencyPair.CurrencyA {
-	case BTC:
+	case types.BTC:
 		return 100, nil
 	default:
 		return 10, nil
 	}
 }
 
-func (dm *Hbdm) GetFutureEstimatedPrice(currencyPair CurrencyPair) (float64, error) {
-	ret, err := HttpGet(dm.config.HttpClient, dm.config.Endpoint+"/api/v1//contract_delivery_price?symbol="+currencyPair.CurrencyA.Symbol)
+func (dm *Hbdm) GetFutureEstimatedPrice(currencyPair types.CurrencyPair) (float64, error) {
+	ret, err := api.HttpGet(dm.config.HttpClient, dm.config.Endpoint+"/api/v1//contract_delivery_price?symbol="+currencyPair.CurrencyA.Symbol)
 	if err != nil {
 		return -1, err
 	}
@@ -525,9 +527,9 @@ func (dm *Hbdm) GetFutureEstimatedPrice(currencyPair CurrencyPair) (float64, err
 	return ToFloat64(ret["data"].(map[string]interface{})["delivery_price"]), nil
 }
 
-func (dm *Hbdm) GetFutureTicker(currencyPair CurrencyPair, contractType string) (*Ticker, error) {
+func (dm *Hbdm) GetFutureTicker(currencyPair types.CurrencyPair, contractType string) (*types.Ticker, error) {
 	symbol := dm.adaptSymbol(currencyPair, contractType)
-	ret, err := HttpGet(dm.config.HttpClient, dm.config.Endpoint+"/market/detail/merged?symbol="+symbol)
+	ret, err := api.HttpGet(dm.config.HttpClient, dm.config.Endpoint+"/market/detail/merged?symbol="+symbol)
 	if err != nil {
 		return nil, err
 	}
@@ -543,7 +545,7 @@ func (dm *Hbdm) GetFutureTicker(currencyPair CurrencyPair, contractType string) 
 	if !ok1 || !ok2 || !ok3 {
 		return nil, errors.New("no tick data")
 	}
-	return &Ticker{
+	return &types.Ticker{
 		Pair: currencyPair,
 		Last: ToFloat64(tick["close"]),
 		Vol:  ToFloat64(tick["amount"]),
@@ -554,10 +556,10 @@ func (dm *Hbdm) GetFutureTicker(currencyPair CurrencyPair, contractType string) 
 		Date: ToUint64(ret["ts"])}, nil
 }
 
-func (dm *Hbdm) GetFutureDepth(currencyPair CurrencyPair, contractType string, size int) (*Depth, error) {
+func (dm *Hbdm) GetFutureDepth(currencyPair types.CurrencyPair, contractType string, size int) (*types.Depth, error) {
 	symbol := dm.adaptSymbol(currencyPair, contractType)
 	url := dm.config.Endpoint + "/market/depth?type=step0&symbol=" + symbol
-	ret, err := HttpGet(dm.config.HttpClient, url)
+	ret, err := api.HttpGet(dm.config.HttpClient, url)
 	if err != nil {
 		return nil, err
 	}
@@ -567,7 +569,7 @@ func (dm *Hbdm) GetFutureDepth(currencyPair CurrencyPair, contractType string, s
 		return nil, errors.New(ret["err_msg"].(string))
 	}
 	//log.Println(ret)
-	dep := new(Depth)
+	dep := new(types.Depth)
 	dep.Pair = currencyPair
 	dep.ContractType = symbol
 
@@ -584,12 +586,12 @@ func (dm *Hbdm) GetFutureDepth(currencyPair CurrencyPair, contractType string, s
 
 	for _, item := range asks {
 		askItem := item.([]interface{})
-		dep.AskList = append(dep.AskList, DepthRecord{ToFloat64(askItem[0]), ToFloat64(askItem[1])})
+		dep.AskList = append(dep.AskList, types.DepthRecord{ToFloat64(askItem[0]), ToFloat64(askItem[1])})
 	}
 
 	for _, item := range bids {
 		bidItem := item.([]interface{})
-		dep.BidList = append(dep.BidList, DepthRecord{ToFloat64(bidItem[0]), ToFloat64(bidItem[1])})
+		dep.BidList = append(dep.BidList, types.DepthRecord{ToFloat64(bidItem[0]), ToFloat64(bidItem[1])})
 	}
 
 	sort.Sort(sort.Reverse(dep.AskList))
@@ -597,8 +599,8 @@ func (dm *Hbdm) GetFutureDepth(currencyPair CurrencyPair, contractType string, s
 	return dep, nil
 }
 
-func (dm *Hbdm) GetFutureIndex(currencyPair CurrencyPair) (float64, error) {
-	ret, err := HttpGet(dm.config.HttpClient, dm.config.Endpoint+"/api/v1/contract_index?symbol="+currencyPair.CurrencyA.Symbol)
+func (dm *Hbdm) GetFutureIndex(currencyPair types.CurrencyPair) (float64, error) {
+	ret, err := api.HttpGet(dm.config.HttpClient, dm.config.Endpoint+"/api/v1/contract_index?symbol="+currencyPair.CurrencyA.Symbol)
 	if err != nil {
 		return -1, err
 	}
@@ -612,7 +614,7 @@ func (dm *Hbdm) GetFutureIndex(currencyPair CurrencyPair) (float64, error) {
 	return ToFloat64(index), nil
 }
 
-func (dm *Hbdm) GetKlineRecords(contract_type string, currency CurrencyPair, period KlinePeriod, size int, opt ...OptionalParameter) ([]FutureKline, error) {
+func (dm *Hbdm) GetKlineRecords(contract_type string, currency types.CurrencyPair, period types.KlinePeriod, size int, opt ...types.OptionalParameter) ([]types.FutureKline, error) {
 	symbol := dm.adaptSymbol(currency, contract_type)
 	periodS := dm.adaptKLinePeriod(period)
 	url := fmt.Sprintf("%s/market/history/kline?symbol=%s&period=%s&size=%d", dm.config.Endpoint, symbol, periodS, size)
@@ -630,7 +632,7 @@ func (dm *Hbdm) GetKlineRecords(contract_type string, currency CurrencyPair, per
 		} `json:"data"`
 	}
 
-	err := HttpGet4(dm.config.HttpClient, url, nil, &ret)
+	err := api.HttpGet4(dm.config.HttpClient, url, nil, &ret)
 	if err != nil {
 		return nil, err
 	}
@@ -639,11 +641,11 @@ func (dm *Hbdm) GetKlineRecords(contract_type string, currency CurrencyPair, per
 		return nil, errors.New(ret.ErrMsg)
 	}
 
-	var klines []FutureKline
+	var klines []types.FutureKline
 	for i := len(ret.Data) - 1; i >= 0; i-- {
 		d := ret.Data[i]
-		klines = append(klines, FutureKline{
-			Kline: &Kline{
+		klines = append(klines, types.FutureKline{
+			Kline: &types.Kline{
 				Pair:      currency,
 				Vol:       d.Vol,
 				Open:      d.Open,
@@ -669,44 +671,44 @@ func (dm *Hbdm) GetFee() (float64, error) {
 	return 0.003, nil
 }
 
-func (dm *Hbdm) GetTrades(contract_type string, currencyPair CurrencyPair, since int64) ([]Trade, error) {
+func (dm *Hbdm) GetTrades(contract_type string, currencyPair types.CurrencyPair, since int64) ([]types.Trade, error) {
 	panic("not supported.")
 }
 
-func (dm *Hbdm) adaptSymbol(pair CurrencyPair, contractType string) string {
+func (dm *Hbdm) adaptSymbol(pair types.CurrencyPair, contractType string) string {
 	symbol := pair.CurrencyA.Symbol + "_"
 	switch contractType {
-	case THIS_WEEK_CONTRACT:
+	case types.THIS_WEEK_CONTRACT:
 		symbol += "CW"
-	case NEXT_WEEK_CONTRACT:
+	case types.NEXT_WEEK_CONTRACT:
 		symbol += "NW"
-	case QUARTER_CONTRACT:
+	case types.QUARTER_CONTRACT:
 		symbol += "CQ"
 	}
 	return symbol
 }
 
-func (dm *Hbdm) adaptKLinePeriod(period KlinePeriod) string {
+func (dm *Hbdm) adaptKLinePeriod(period types.KlinePeriod) string {
 	switch period {
-	case KLINE_PERIOD_1MIN:
+	case types.KLINE_PERIOD_1MIN:
 		return "1min"
-	case KLINE_PERIOD_5MIN:
+	case types.KLINE_PERIOD_5MIN:
 		return "5min"
-	case KLINE_PERIOD_15MIN:
+	case types.KLINE_PERIOD_15MIN:
 		return "15min"
-	case KLINE_PERIOD_30MIN:
+	case types.KLINE_PERIOD_30MIN:
 		return "30min"
-	case KLINE_PERIOD_60MIN:
+	case types.KLINE_PERIOD_60MIN:
 		return "60min"
-	case KLINE_PERIOD_1H:
+	case types.KLINE_PERIOD_1H:
 		return "1h"
-	case KLINE_PERIOD_4H:
+	case types.KLINE_PERIOD_4H:
 		return "4h"
-	case KLINE_PERIOD_1DAY:
+	case types.KLINE_PERIOD_1DAY:
 		return "1day"
-	case KLINE_PERIOD_1WEEK:
+	case types.KLINE_PERIOD_1WEEK:
 		return "1week"
-	case KLINE_PERIOD_1MONTH:
+	case types.KLINE_PERIOD_1MONTH:
 		return "1mon"
 	default:
 		return "1day"
@@ -715,13 +717,13 @@ func (dm *Hbdm) adaptKLinePeriod(period KlinePeriod) string {
 
 func (dm *Hbdm) adaptOpenType(openType int) (direction string, offset string) {
 	switch openType {
-	case OPEN_BUY:
+	case types.OPEN_BUY:
 		return "buy", "open"
-	case OPEN_SELL:
+	case types.OPEN_SELL:
 		return "sell", "open"
-	case CLOSE_SELL:
+	case types.CLOSE_SELL:
 		return "buy", "close"
-	case CLOSE_BUY:
+	case types.CLOSE_BUY:
 		return "sell", "close"
 	default:
 		return "", ""
@@ -732,34 +734,34 @@ func (dm *Hbdm) adaptOffsetDirectionToOpenType(offset, direction string) int {
 	switch offset {
 	case "close":
 		if direction == "buy" {
-			return CLOSE_SELL
+			return types.CLOSE_SELL
 		} else {
-			return CLOSE_BUY
+			return types.CLOSE_BUY
 		}
 
 	default:
 		if direction == "buy" {
-			return OPEN_BUY
+			return types.OPEN_BUY
 		} else {
-			return OPEN_SELL
+			return types.OPEN_SELL
 		}
 	}
 }
 
-func (dm *Hbdm) adaptOrderStatus(s int) TradeStatus {
+func (dm *Hbdm) adaptOrderStatus(s int) types.TradeStatus {
 	switch s {
 	case 3:
-		return ORDER_UNFINISH
+		return types.ORDER_UNFINISH
 	case 4:
-		return ORDER_PART_FINISH
+		return types.ORDER_PART_FINISH
 	case 5:
-		return ORDER_FINISH
+		return types.ORDER_FINISH
 	case 6:
-		return ORDER_FINISH
+		return types.ORDER_FINISH
 	case 7:
-		return ORDER_CANCEL
+		return types.ORDER_CANCEL
 	default:
-		return ORDER_UNFINISH
+		return types.ORDER_UNFINISH
 	}
 }
 
@@ -783,7 +785,7 @@ func (dm *Hbdm) doRequest(path string, params *url.Values, data interface{}) err
 
 	var ret BaseResponse
 
-	resp, err := HttpPostForm3(dm.config.HttpClient, dm.config.Endpoint+path+"?"+params.Encode(), string(jsonD),
+	resp, err := api.HttpPostForm3(dm.config.HttpClient, dm.config.Endpoint+path+"?"+params.Encode(), string(jsonD),
 		map[string]string{"Content-Type": "application/json", "Accept-Language": "zh-cn"})
 
 	if err != nil {
@@ -804,7 +806,7 @@ func (dm *Hbdm) doRequest(path string, params *url.Values, data interface{}) err
 	return json.Unmarshal(ret.Data, data)
 }
 
-func (dm *Hbdm) formatPriceSize(contract string, currency Currency, price string) string {
+func (dm *Hbdm) formatPriceSize(contract string, currency types.Currency, price string) string {
 	var tickSize = 2 //default set 2
 	for _, v := range FuturesContractInfos {
 		if (v.ContractType == contract || v.InstrumentID == contract) && v.UnderlyingIndex == currency.Symbol {

@@ -1,66 +1,64 @@
 package okex
 
-import "time"
-
-//
 import (
-	. "github.com/fpChan/goex"
+	"github.com/fpChan/goex/types"
+	"time"
 )
 
-func adaptKLinePeriod(period KlinePeriod) int {
+func adaptKLinePeriod(period types.KlinePeriod) int {
 	granularity := -1
 	switch period {
-	case KLINE_PERIOD_1MIN:
+	case types.KLINE_PERIOD_1MIN:
 		granularity = 60
-	case KLINE_PERIOD_3MIN:
+	case types.KLINE_PERIOD_3MIN:
 		granularity = 180
-	case KLINE_PERIOD_5MIN:
+	case types.KLINE_PERIOD_5MIN:
 		granularity = 300
-	case KLINE_PERIOD_15MIN:
+	case types.KLINE_PERIOD_15MIN:
 		granularity = 900
-	case KLINE_PERIOD_30MIN:
+	case types.KLINE_PERIOD_30MIN:
 		granularity = 1800
-	case KLINE_PERIOD_1H, KLINE_PERIOD_60MIN:
+	case types.KLINE_PERIOD_1H, types.KLINE_PERIOD_60MIN:
 		granularity = 3600
-	case KLINE_PERIOD_2H:
+	case types.KLINE_PERIOD_2H:
 		granularity = 7200
-	case KLINE_PERIOD_4H:
+	case types.KLINE_PERIOD_4H:
 		granularity = 14400
-	case KLINE_PERIOD_6H:
+	case types.KLINE_PERIOD_6H:
 		granularity = 21600
-	case KLINE_PERIOD_1DAY:
+	case types.KLINE_PERIOD_1DAY:
 		granularity = 86400
-	case KLINE_PERIOD_1WEEK:
+	case types.KLINE_PERIOD_1WEEK:
 		granularity = 604800
 	}
 	return granularity
 }
 
-func adaptSecondsToKlinePeriod(seconds int) KlinePeriod {
-	var p KlinePeriod
+func adaptSecondsToKlinePeriod(seconds int) types.KlinePeriod {
+	var p types.KlinePeriod
 	switch seconds {
 	case 60:
-		p = KLINE_PERIOD_1MIN
+		p = types.KLINE_PERIOD_1MIN
 	case 180:
-		p = KLINE_PERIOD_3MIN
+		p = types.KLINE_PERIOD_3MIN
 	case 300:
-		p = KLINE_PERIOD_5MIN
+		p = types.KLINE_PERIOD_5MIN
 	case 900:
-		p = KLINE_PERIOD_15MIN
+		p = types.KLINE_PERIOD_15MIN
 	case 1800:
-		p = KLINE_PERIOD_30MIN
+		p = types.KLINE_PERIOD_30MIN
 	case 3600:
-		p = KLINE_PERIOD_1H
+		p = types.KLINE_PERIOD_1H
 	case 7200:
-		p = KLINE_PERIOD_2H
+		p = types.KLINE_PERIOD_2H
 	case 14400:
-		p = KLINE_PERIOD_4H
+		p = types.KLINE_PERIOD_4H
 	case 21600:
-		p = KLINE_PERIOD_6H
+		p = types.KLINE_PERIOD_6H
 	case 86400:
-		p = KLINE_PERIOD_1DAY
+		p = types.KLINE_PERIOD_1DAY
 	case 604800:
-		p = KLINE_PERIOD_1WEEK
+		p = types.KLINE_PERIOD_1WEEK
 	}
 	return p
 }

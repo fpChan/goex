@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/fpChan/goex"
+	"github.com/fpChan/goex/common/api"
 	"github.com/fpChan/goex/internal/logger"
+	"github.com/fpChan/goex/types"
 	"net/url"
 	"sort"
 	"time"
@@ -13,7 +15,7 @@ import (
 
 type HbdmSwap struct {
 	base *Hbdm
-	c    *APIConfig
+	c    *types.APIConfig
 }
 
 const (
@@ -30,7 +32,7 @@ const (
 	getHistoryOrderPath        = "/swap-api/v1/swap_hisorders_exact"
 )
 
-func NewHbdmSwap(c *APIConfig) *HbdmSwap {
+func NewHbdmSwap(c *types.APIConfig) *HbdmSwap {
 	if c.Lever <= 0 {
 		c.Lever = 10
 	}
@@ -42,12 +44,12 @@ func NewHbdmSwap(c *APIConfig) *HbdmSwap {
 }
 
 func (swap *HbdmSwap) GetExchangeName() string {
-	return HBDM_SWAP
+	return "HBDM_SWAP"
 }
 
-func (swap *HbdmSwap) GetFutureTicker(currencyPair CurrencyPair, contractType string) (*Ticker, error) {
+func (swap *HbdmSwap) GetFutureTicker(currencyPair types.CurrencyPair, contractType string) (*types.Ticker, error) {
 	tickerUrl := fmt.Sprintf("%s%s?contract_code=%s", swap.base.config.Endpoint, tickerApiPath, currencyPair.ToSymbol("-"))
-	responseBody, err := HttpGet5(swap.base.config.HttpClient, tickerUrl, map[string]string{})
+	responseBody, err := api.HttpGet5(swap.base.config.HttpClient, tickerUrl, map[string]string{})
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +83,7 @@ func (swap *HbdmSwap) GetFutureTicker(currencyPair CurrencyPair, contractType st
 		return nil, errors.New(string(responseBody))
 	}
 
-	return &Ticker{
+	return &types.Ticker{
 		Pair: currencyPair,
 		Last: 0,
 		Buy:  tickResponse.Tick.Bid[0],
@@ -93,20 +95,20 @@ func (swap *HbdmSwap) GetFutureTicker(currencyPair CurrencyPair, contractType st
 	}, nil
 }
 
-func (swap *HbdmSwap) GetFutureDepth(currencyPair CurrencyPair, contractType string, size int) (*Depth, error) {
+func (swap *HbdmSwap) GetFutureDepth(currencyPair types.CurrencyPair, contractType string, size int) (*types.Depth, error) {
 	step := 0
 	if size <= 20 {
 		step = 6
 	}
 	depthUrl := fmt.Sprintf("%s%s?contract_code=%s&type=step%d", swap.base.config.Endpoint, marketApiPath, currencyPair.ToSymbol("-"), step)
-	responseBody, err := HttpGet5(swap.base.config.HttpClient, depthUrl, map[string]string{})
+	responseBody, err := api.HttpGet5(swap.base.config.HttpClient, depthUrl, map[string]string{})
 	if err != nil {
 		return nil, err
 	}
 	logger.Debugf("response body: %s", string(responseBody))
 
 	var (
-		dep          Depth
+		dep          types.Depth
 		tickResponse struct {
 			BaseResponse
 			Tick struct {
@@ -135,7 +137,7 @@ func (swap *HbdmSwap) GetFutureDepth(currencyPair CurrencyPair, contractType str
 		if i >= size {
 			break
 		}
-		dep.BidList = append(dep.BidList, DepthRecord{
+		dep.BidList = append(dep.BidList, types.DepthRecord{
 			Price:  ToFloat64(item[0]),
 			Amount: ToFloat64(item[1]),
 		})
@@ -145,7 +147,7 @@ func (swap *HbdmSwap) GetFutureDepth(currencyPair CurrencyPair, contractType str
 		if i >= size {
 			break
 		}
-		dep.AskList = append(dep.AskList, DepthRecord{
+		dep.AskList = append(dep.AskList, types.DepthRecord{
 			Price:  ToFloat64(item[0]),
 			Amount: ToFloat64(item[1]),
 		})
@@ -156,7 +158,7 @@ func (swap *HbdmSwap) GetFutureDepth(currencyPair CurrencyPair, contractType str
 	return &dep, nil
 }
 
-func (swap *HbdmSwap) GetFutureUserinfo(currencyPair ...CurrencyPair) (*FutureAccount, error) {
+func (swap *HbdmSwap) GetFutureUserinfo(currencyPair ...types.CurrencyPair) (*types.FutureAccount, error) {
 	var accountInfoResponse []struct {
 		Symbol           string  `json:"symbol"`
 		MarginBalance    float64 `json:"margin_balance"`
@@ -179,12 +181,12 @@ func (swap *HbdmSwap) GetFutureUserinfo(currencyPair ...CurrencyPair) (*FutureAc
 		return nil, err
 	}
 
-	var futureAccount FutureAccount
-	futureAccount.FutureSubAccounts = make(map[Currency]FutureSubAccount, 4)
+	var futureAccount types.FutureAccount
+	futureAccount.FutureSubAccounts = make(map[types.Currency]types.FutureSubAccount, 4)
 
 	for _, acc := range accountInfoResponse {
-		currency := NewCurrency(acc.Symbol, "")
-		futureAccount.FutureSubAccounts[currency] = FutureSubAccount{
+		currency := types.NewCurrency(acc.Symbol, "")
+		futureAccount.FutureSubAccounts[currency] = types.FutureSubAccount{
 			Currency:      currency,
 			AccountRights: acc.MarginBalance,
 			KeepDeposit:   acc.MarginPosition,
@@ -197,7 +199,7 @@ func (swap *HbdmSwap) GetFutureUserinfo(currencyPair ...CurrencyPair) (*FutureAc
 	return &futureAccount, nil
 }
 
-func (swap *HbdmSwap) PlaceFutureOrder(currencyPair CurrencyPair, contractType, price, amount string, openType, matchPrice int, leverRate float64) (string, error) {
+func (swap *HbdmSwap) PlaceFutureOrder(currencyPair types.CurrencyPair, contractType, price, amount string, openType, matchPrice int, leverRate float64) (string, error) {
 	param := url.Values{}
 	param.Set("contract_code", currencyPair.ToSymbol("-"))
 	param.Set("client_order_id", fmt.Sprint(time.Now().UnixNano()))
@@ -229,9 +231,9 @@ func (swap *HbdmSwap) PlaceFutureOrder(currencyPair CurrencyPair, contractType, 
 	return orderResponse.OrderId, nil
 }
 
-func (swap *HbdmSwap) LimitFuturesOrder(currencyPair CurrencyPair, contractType, price, amount string, openType int, opt ...LimitOrderOptionalParameter) (*FutureOrder, error) {
+func (swap *HbdmSwap) LimitFuturesOrder(currencyPair types.CurrencyPair, contractType, price, amount string, openType int, opt ...types.LimitOrderOptionalParameter) (*types.FutureOrder, error) {
 	orderId, err := swap.PlaceFutureOrder(currencyPair, contractType, price, amount, openType, 0, swap.c.Lever)
-	return &FutureOrder{
+	return &types.FutureOrder{
 		Currency:     currencyPair,
 		OrderID2:     orderId,
 		Amount:       ToFloat64(amount),
@@ -241,9 +243,9 @@ func (swap *HbdmSwap) LimitFuturesOrder(currencyPair CurrencyPair, contractType,
 	}, err
 }
 
-func (swap *HbdmSwap) MarketFuturesOrder(currencyPair CurrencyPair, contractType, amount string, openType int) (*FutureOrder, error) {
+func (swap *HbdmSwap) MarketFuturesOrder(currencyPair types.CurrencyPair, contractType, amount string, openType int) (*types.FutureOrder, error) {
 	orderId, err := swap.PlaceFutureOrder(currencyPair, contractType, "", amount, openType, 1, 10)
-	return &FutureOrder{
+	return &types.FutureOrder{
 		Currency:     currencyPair,
 		OrderID2:     orderId,
 		Amount:       ToFloat64(amount),
@@ -252,7 +254,7 @@ func (swap *HbdmSwap) MarketFuturesOrder(currencyPair CurrencyPair, contractType
 	}, err
 }
 
-func (swap *HbdmSwap) FutureCancelOrder(currencyPair CurrencyPair, contractType, orderId string) (bool, error) {
+func (swap *HbdmSwap) FutureCancelOrder(currencyPair types.CurrencyPair, contractType, orderId string) (bool, error) {
 	param := url.Values{}
 	param.Set("order_id", orderId)
 	param.Set("contract_code", currencyPair.ToSymbol("-"))
@@ -276,13 +278,13 @@ func (swap *HbdmSwap) FutureCancelOrder(currencyPair CurrencyPair, contractType,
 	return true, nil
 }
 
-func (swap *HbdmSwap) GetFuturePosition(currencyPair CurrencyPair, contractType string) ([]FuturePosition, error) {
+func (swap *HbdmSwap) GetFuturePosition(currencyPair types.CurrencyPair, contractType string) ([]types.FuturePosition, error) {
 	param := url.Values{}
 	param.Set("contract_code", currencyPair.ToSymbol("-"))
 
 	var (
-		tempPositionMap  map[string]*FuturePosition
-		futuresPositions []FuturePosition
+		tempPositionMap  map[string]*types.FuturePosition
+		futuresPositions []types.FuturePosition
 		positionResponse []struct {
 			Symbol         string
 			ContractCode   string  `json:"contract_code"`
@@ -304,17 +306,17 @@ func (swap *HbdmSwap) GetFuturePosition(currencyPair CurrencyPair, contractType 
 		return nil, err
 	}
 
-	futuresPositions = make([]FuturePosition, 0, 2)
-	tempPositionMap = make(map[string]*FuturePosition, 2)
+	futuresPositions = make([]types.FuturePosition, 0, 2)
+	tempPositionMap = make(map[string]*types.FuturePosition, 2)
 
 	for _, pos := range positionResponse {
 		if tempPositionMap[pos.ContractCode] == nil {
-			tempPositionMap[pos.ContractCode] = new(FuturePosition)
+			tempPositionMap[pos.ContractCode] = new(types.FuturePosition)
 		}
 		switch pos.Direction {
 		case "sell":
 			tempPositionMap[pos.ContractCode].ContractType = pos.ContractCode
-			tempPositionMap[pos.ContractCode].Symbol = NewCurrencyPair3(pos.ContractCode, "-")
+			tempPositionMap[pos.ContractCode].Symbol = types.NewCurrencyPair3(pos.ContractCode, "-")
 			tempPositionMap[pos.ContractCode].SellAmount = pos.Volume
 			tempPositionMap[pos.ContractCode].SellAvailable = pos.Available
 			tempPositionMap[pos.ContractCode].SellPriceAvg = pos.CostOpen
@@ -323,7 +325,7 @@ func (swap *HbdmSwap) GetFuturePosition(currencyPair CurrencyPair, contractType 
 			tempPositionMap[pos.ContractCode].SellProfit = pos.Profit
 		case "buy":
 			tempPositionMap[pos.ContractCode].ContractType = pos.ContractCode
-			tempPositionMap[pos.ContractCode].Symbol = NewCurrencyPair3(pos.ContractCode, "-")
+			tempPositionMap[pos.ContractCode].Symbol = types.NewCurrencyPair3(pos.ContractCode, "-")
 			tempPositionMap[pos.ContractCode].BuyAmount = pos.Volume
 			tempPositionMap[pos.ContractCode].BuyAvailable = pos.Available
 			tempPositionMap[pos.ContractCode].BuyPriceAvg = pos.CostOpen
@@ -340,11 +342,11 @@ func (swap *HbdmSwap) GetFuturePosition(currencyPair CurrencyPair, contractType 
 	return futuresPositions, nil
 }
 
-func (swap *HbdmSwap) GetFutureOrders(orderIds []string, currencyPair CurrencyPair, contractType string) ([]FutureOrder, error) {
+func (swap *HbdmSwap) GetFutureOrders(orderIds []string, currencyPair types.CurrencyPair, contractType string) ([]types.FutureOrder, error) {
 	return nil, nil
 }
 
-func (swap *HbdmSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair, contractType string) (*FutureOrder, error) {
+func (swap *HbdmSwap) GetFutureOrder(orderId string, currencyPair types.CurrencyPair, contractType string) (*types.FutureOrder, error) {
 	var (
 		orderInfoResponse []OrderInfo
 		param             = url.Values{}
@@ -364,7 +366,7 @@ func (swap *HbdmSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair, 
 
 	orderInfo := orderInfoResponse[0]
 
-	return &FutureOrder{
+	return &types.FutureOrder{
 		Currency:     currencyPair,
 		ClientOid:    fmt.Sprint(orderInfo.ClientOrderId),
 		OrderID2:     fmt.Sprint(orderInfo.OrderId),
@@ -382,13 +384,13 @@ func (swap *HbdmSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair, 
 	}, nil
 }
 
-func (swap *HbdmSwap) GetFutureOrderHistory(pair CurrencyPair, contractType string, optional ...OptionalParameter) ([]FutureOrder, error) {
+func (swap *HbdmSwap) GetFutureOrderHistory(pair types.CurrencyPair, contractType string, optional ...types.OptionalParameter) ([]types.FutureOrder, error) {
 	params := url.Values{}
 	params.Add("status", "0")     //all
 	params.Add("type", "1")       //all
 	params.Add("trade_type", "0") //all
 
-	if contractType == "" || contractType == SWAP_CONTRACT {
+	if contractType == "" || contractType == types.SWAP_CONTRACT {
 		params.Add("contract_code", pair.AdaptUsdtToUsd().ToSymbol("-"))
 	} else {
 		return nil, errors.New("contract type is error")
@@ -407,10 +409,10 @@ func (swap *HbdmSwap) GetFutureOrderHistory(pair CurrencyPair, contractType stri
 		return nil, err
 	}
 
-	var historyOrders []FutureOrder
+	var historyOrders []types.FutureOrder
 
 	for _, ord := range historyOrderResp.Orders {
-		historyOrders = append(historyOrders, FutureOrder{
+		historyOrders = append(historyOrders, types.FutureOrder{
 			OrderID:      ord.OrderId,
 			OrderID2:     fmt.Sprintf("%d", ord.OrderId),
 			Price:        ord.Price,
@@ -430,7 +432,7 @@ func (swap *HbdmSwap) GetFutureOrderHistory(pair CurrencyPair, contractType stri
 	return historyOrders, nil
 }
 
-func (swap *HbdmSwap) GetUnfinishFutureOrders(currencyPair CurrencyPair, contractType string) ([]FutureOrder, error) {
+func (swap *HbdmSwap) GetUnfinishFutureOrders(currencyPair types.CurrencyPair, contractType string) ([]types.FutureOrder, error) {
 	param := url.Values{}
 	param.Set("contract_code", currencyPair.ToSymbol("-"))
 	param.Set("page_size", "50")
@@ -444,9 +446,9 @@ func (swap *HbdmSwap) GetUnfinishFutureOrders(currencyPair CurrencyPair, contrac
 		return nil, err
 	}
 
-	openOrders := make([]FutureOrder, 0, len(openOrderResponse.Orders))
+	openOrders := make([]types.FutureOrder, 0, len(openOrderResponse.Orders))
 	for _, ord := range openOrderResponse.Orders {
-		openOrders = append(openOrders, FutureOrder{
+		openOrders = append(openOrders, types.FutureOrder{
 			Currency:   currencyPair,
 			ClientOid:  fmt.Sprint(ord.ClientOrderId),
 			OrderID2:   fmt.Sprint(ord.OrderId),
@@ -466,20 +468,20 @@ func (swap *HbdmSwap) GetUnfinishFutureOrders(currencyPair CurrencyPair, contrac
 	return openOrders, nil
 }
 
-func (swap *HbdmSwap) GetContractValue(currencyPair CurrencyPair) (float64, error) {
+func (swap *HbdmSwap) GetContractValue(currencyPair types.CurrencyPair) (float64, error) {
 	switch currencyPair {
-	case BTC_USD, BTC_USDT:
+	case types.BTC_USD, types.BTC_USDT:
 		return 100, nil
 	default:
 		return 0, nil
 	}
 }
 
-func (swap *HbdmSwap) GetKlineRecords(contractType string, currency CurrencyPair, period KlinePeriod, size int, opt ...OptionalParameter) ([]FutureKline, error) {
+func (swap *HbdmSwap) GetKlineRecords(contractType string, currency types.CurrencyPair, period types.KlinePeriod, size int, opt ...types.OptionalParameter) ([]types.FutureKline, error) {
 	panic("not implement")
 }
 
-func (swap *HbdmSwap) GetTrades(contractType string, currencyPair CurrencyPair, since int64) ([]Trade, error) {
+func (swap *HbdmSwap) GetTrades(contractType string, currencyPair types.CurrencyPair, since int64) ([]types.Trade, error) {
 	panic("not implement")
 }
 
@@ -487,7 +489,7 @@ func (swap *HbdmSwap) GetFee() (float64, error) {
 	panic("not implement")
 }
 
-func (swap *HbdmSwap) GetFutureIndex(currencyPair CurrencyPair) (float64, error) {
+func (swap *HbdmSwap) GetFutureIndex(currencyPair types.CurrencyPair) (float64, error) {
 	panic("not implement")
 }
 
@@ -495,6 +497,6 @@ func (swap *HbdmSwap) GetDeliveryTime() (int, int, int, int) {
 	panic("not implement")
 }
 
-func (swap *HbdmSwap) GetFutureEstimatedPrice(currencyPair CurrencyPair) (float64, error) {
+func (swap *HbdmSwap) GetFutureEstimatedPrice(currencyPair types.CurrencyPair) (float64, error) {
 	panic("not implement")
 }

@@ -1,4 +1,4 @@
-package goex
+package exchange
 
 type ApiError struct {
 	ErrCode,
