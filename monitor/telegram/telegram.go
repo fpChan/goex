@@ -62,7 +62,7 @@ func (tgMonitor TelegramMonitor) Start() error {
 				if err != nil {
 					log.Fatal(fmt.Sprintf("failed to get future %s ticker by", symbol), err)
 				}
-				var changePercent = (candles[0].Low - candles[0].High) / candles[0].High * 100
+				var changePercent = (candles[0].Close - candles[0].Open) / candles[0].Open * 100
 				fmt.Printf("changePercent %f \t", changePercent)
 				if changePercent > -1 && changePercent < 1 {
 					continue
