@@ -1,7 +1,6 @@
 package huobi
 
 import (
-	"github.com/fpChan/goex"
 	"github.com/fpChan/goex/internal/logger"
 	"github.com/fpChan/goex/types"
 	"github.com/stretchr/testify/assert"
@@ -40,7 +39,7 @@ func init() {
 }
 
 func TestHuobiPro_GetTicker(t *testing.T) {
-	ticker, err := hbpro.GetTicker(goex.XRP_BTC)
+	ticker, err := hbpro.GetTicker(types.ETH_USD)
 	assert.Nil(t, err)
 	t.Log(ticker)
 }
@@ -77,28 +76,28 @@ func TestHuobiPro_GetAccount(t *testing.T) {
 
 func TestHuobiPro_LimitBuy(t *testing.T) {
 	return
-	ord, err := hbpro.LimitBuy("", "0.09122", goex.BCC_BTC)
+	ord, err := hbpro.LimitBuy("", "0.09122", types.MATIC_USDT)
 	assert.Nil(t, err)
 	t.Log(ord)
 }
 
 func TestHuobiPro_LimitSell(t *testing.T) {
 	return
-	ord, err := hbpro.LimitSell("1", "0.212", goex.BCC_BTC)
+	ord, err := hbpro.LimitSell("1", "0.212", types.MATIC_USDT)
 	assert.Nil(t, err)
 	t.Log(ord)
 }
 
 func TestHuobiPro_MarketSell(t *testing.T) {
 	return
-	ord, err := hbpro.MarketSell("0.1738", "0.212", goex.BCC_BTC)
+	ord, err := hbpro.MarketSell("0.1738", "0.212", types.THETA_USDT)
 	assert.Nil(t, err)
 	t.Log(ord)
 }
 
 func TestHuobiPro_MarketBuy(t *testing.T) {
 	return
-	ord, err := hbpro.MarketBuy("0.02", "", goex.BCC_BTC)
+	ord, err := hbpro.MarketBuy("0.02", "", types.THETA_USDT)
 	assert.Nil(t, err)
 	t.Log(ord)
 }
