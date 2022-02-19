@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	okexURL     = "https://www.okex.com"
+	okexURL = "https://www.okex.com"
 )
 
 func main() {
@@ -46,9 +46,9 @@ func StartPriceMonitor(monitorClient config.MonitorClient, targetSymbols []types
 				if err != nil {
 					log.Fatal(fmt.Sprintf("failed to get future %s ticker by", symbol), err)
 				}
-				var changePercent = (candles[0].Close - candles[0].Open) / candles[0].Open * 100
+				var changePercent = (candles[0].Close - candles[0].Open) * 100 / candles[0].Open
 				fmt.Printf("changePercent %f \t", changePercent)
-				if changePercent > -0.0001 && changePercent < 0.0001 {
+				if changePercent > -1 && changePercent < 1 {
 					continue
 				}
 				msg = fmt.Sprintf("%s change percent: %0.2f %%\t high:%f\t low:%f\t price: %f\n time %s\n%s", symbol, changePercent, candles[0].High, candles[0].Low, candles[0].Close, time.Unix(candles[0].Timestamp, 0), msg)
